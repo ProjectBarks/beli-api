@@ -7,8 +7,11 @@
     "validate:spec": "npm run lint:spec && npm run bundle:spec && node scripts/count-ops.mjs"
   },
   "devDependencies": {
-    "@stoplight/spectral-cli": "^6",
+    "@hey-api/openapi-ts": "^0.99.0",
     "@redocly/cli": "^1",
+    "@stoplight/spectral-cli": "^6",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
     "yaml": "^2"
   }
 }
