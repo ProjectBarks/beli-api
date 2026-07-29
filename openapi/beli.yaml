@@ -762,6 +762,474 @@ paths:
       responses:
         "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
         "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/corr/{uuid1}/{uuid2}/:
+    get:
+      operationId: getCorr
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Correlation/affinity data between two users
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid1, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: uuid2, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/follow-count/{uuid}/followers/:
+    get:
+      operationId: getFollowCountFollowers
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Follower count for a user (bare integer per reference §8 FollowCount)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: integer } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/follow-count/{uuid}/following/:
+    get:
+      operationId: getFollowCountFollowing
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Following count for a user (bare integer per reference §8 FollowCount)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: integer } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/follow-requests/{uuid}/:
+    get:
+      operationId: getFollowRequests
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Pending follow requests for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/follow/:
+    get:
+      operationId: getFollow
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Existing-edge check between a follower and followed user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: follower, in: query, required: false, schema: { type: string, format: uuid } }
+        - { name: followed, in: query, required: false, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/PaginatedResults" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+    post:
+      operationId: createFollow
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Follow a user
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                follower: { type: string, format: uuid }
+                followed: { type: string, format: uuid }
+              required: [follower, followed]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/FollowEdge" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/follow/{id}/:
+    put:
+      operationId: updateFollow
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Unfollow (set unfollow_dt on a follow edge)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                unfollow_dt: { type: string }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/FollowEdge" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/followers/{uuid}/:
+    get:
+      operationId: getFollowers
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: >
+        A user's followers (reference §2: known to intermittently 503 —
+        treat as best-effort)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/following/{uuid}/:
+    get:
+      operationId: getFollowing
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Users a user is following
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/get-user-tag-suggestions/:
+    get:
+      operationId: getUserTagSuggestions
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Suggested users to tag (e.g. when writing a review)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/leaderboard/{uuid}/RANK/all_members/:
+    get:
+      operationId: getLeaderboard
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: RANK leaderboard among all members for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/mutual-bookmarks/{uuid1},{uuid2}/:
+    get:
+      operationId: getMutualBookmarks
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Businesses bookmarked by both users (comma-joined path segment per reference §7)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid1, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: uuid2, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/passed-user-corr/{uuid}/:
+    post:
+      operationId: createPassedUserCorr
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Batch affinity/correlation lookup for a list of users
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids: { type: array, items: { type: string, format: uuid } }
+              required: [ids]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: array, items: {} } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/people-you-may-know-full/{uuid}/:
+    get:
+      operationId: getPeopleYouMayKnowFull
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Full "people you may know" suggestions for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/shared-meals/{uuid1}/{uuid2}/:
+    get:
+      operationId: getSharedMeals
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Meals/businesses shared between two users
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid1, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: uuid2, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/tagged-users/:
+    get:
+      operationId: getTaggedUsers
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Users tagged (generic, not scoped to a business)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-activity-subscriptions/{uuid1}/{uuid2}/:
+    get:
+      operationId: getUserActivitySubscriptions
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Activity-subscription state between two users
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid1, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: uuid2, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user/list/:
+    post:
+      operationId: createUserList
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Batch user hydration — resolve a list of user ids to full user objects
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids: { type: array, items: { type: string, format: uuid } }
+              required: [ids]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user/search/{uuid}/{query}/:
+    get:
+      operationId: getUserSearch
+      tags: [social]
+      security: [{ bearerAuth: [] }]
+      summary: Search for users by query string, scoped to a requesting user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: query, in: path, required: true, schema: { type: string } }
+        - { name: page, in: query, required: false, schema: { type: integer }, description: "Pagination unverified per reference §5." }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/PaginatedResults" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/add-ranking/:
+    post:
+      operationId: createRanking
+      tags: [ranking]
+      security: [{ bearerAuth: [] }]
+      summary: Create a rating/review (sentiment seed; Beli computes the displayed 0–10 score server-side)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AddRankingRequest" } } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/AddRankingResponse" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/check-share-post-rank/:
+    post:
+      operationId: checkSharePostRank
+      tags: [ranking]
+      security: [{ bearerAuth: [] }]
+      summary: Third step of the rating-create sequence — post-rank share popups (value:null + share flags)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AddRankingRequest" } } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/delete-ranking/{uuid}/{id}/:
+    put:
+      operationId: deleteRanking
+      tags: [ranking]
+      security: [{ bearerAuth: [] }]
+      summary: Soft-delete a rating/review (PUT with empty body)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: false
+        content: { application/json: { schema: { type: object } } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/get-bookmark/:
+    get:
+      operationId: getBookmark
+      tags: [ranking]
+      security: [{ bearerAuth: [] }]
+      summary: A user's bookmarks
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/get-ranking/:
+    get:
+      operationId: getRanking
+      tags: [ranking]
+      security: [{ bearerAuth: [] }]
+      summary: >
+        A user's rankings for a category (reference §5: requires user+category,
+        ignores business)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: user, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: category, in: query, required: true, schema: { type: string } }
+        - { name: business, in: query, required: false, schema: { type: integer }, description: "Ignored server-side per reference §5; included for completeness." }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/process-add-ranking/:
+    post:
+      operationId: processAddRanking
+      tags: [ranking]
+      security: [{ bearerAuth: [] }]
+      summary: Second step of the rating-create sequence — side effects (clear_playlists, unlocked_playlist_access)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AddRankingRequest" } } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/score-average/{uuid}/ALL/:
+    get:
+      operationId: getScoreAverage
+      tags: [ranking]
+      security: [{ bearerAuth: [] }]
+      summary: Average score across all categories for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-field-count/{uuid}/BOOKMARKED/:
+    get:
+      operationId: getUserFieldCountBookmarked
+      tags: [ranking]
+      security: [{ bearerAuth: [] }]
+      summary: Count of a user's bookmarked-field records
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-field-count/{uuid}/RANK/:
+    get:
+      operationId: getUserFieldCountRank
+      tags: [ranking]
+      security: [{ bearerAuth: [] }]
+      summary: Count of a user's RANK-field records
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-rec-scores/:
+    post:
+      operationId: createUserRecScores
+      tags: [ranking]
+      security: [{ bearerAuth: [] }]
+      summary: Compute/refresh recommendation scores for a user; request body not captured
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object } } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-scores-cached/{uuid}/:
+    get:
+      operationId: getUserScoresCached
+      tags: [ranking]
+      security: [{ bearerAuth: [] }]
+      summary: Cached scores for a user (see reference §8 CachedScore)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-scores/{uuid}/:
+    get:
+      operationId: getUserScores
+      tags: [ranking]
+      security: [{ bearerAuth: [] }]
+      summary: Scores for a user (see reference §8 Score)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/data-user-business-text-new/:
+    post:
+      operationId: createDataUserBusinessText
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Write user-business text (e.g. NOTES/review text) via the EAV layer
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user: { type: string, format: uuid }
+                business: { type: integer }
+                field_name: { type: string }
+                value: { type: string }
+              required: [user, business, field_name, value]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/add-bookmark/:
+    post:
+      operationId: createBookmark
+      tags: [ranking]
+      x-beli-unverified: true
+      security: [{ bearerAuth: [] }]
+      summary: Bookmark a business (external source only — beli-mcp; not observed in our captures)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object } } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/remove-bookmark/:
+    put:
+      operationId: removeBookmark
+      tags: [ranking]
+      x-beli-unverified: true
+      security: [{ bearerAuth: [] }]
+      summary: Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object } } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
 components:
   schemas:
     User:
@@ -992,6 +1460,30 @@ components:
         next: { type: [string, "null"] }
         previous: { type: [string, "null"] }
         results: { type: array, items: {} }
+    AddRankingRequest:
+      type: object
+      properties:
+        category: { type: string }
+        user_id: { type: string, format: uuid }
+        business_id: { type: integer }
+        value: { type: [number, "null"] }
+        tagged_users: { type: array, items: { type: string, format: uuid } }
+        local_datetime: { type: string, format: date-time }
+        utc_offset: { type: integer }
+        visit_dates: { type: array, items: { type: string, format: date } }
+        visit_date_on_rank: { type: [string, "null"], format: date }
+        rank_button_source: { type: [string, "null"] }
+        overall_rank_count: { type: integer }
+        version_supports_multi_category: { type: boolean }
+        has_access_multi_category: { type: boolean }
+        supports_featured_list_challenges: { type: boolean }
+      required: [category, user_id, business_id]
+    AddRankingResponse:
+      type: object
+      properties:
+        results: { type: object }
+        feed_item_id: { type: [integer, "null"] }
+        score: { type: [number, "null"] }
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
   parameters:
