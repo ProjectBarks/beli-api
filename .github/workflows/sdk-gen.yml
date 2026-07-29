@@ -17,8 +17,8 @@ jobs:
         with: { go-version: "1.22" }
       - name: Install root tooling deps (pinned @hey-api + typescript@5.9 for sdk-ts)
         run: npm install
-      - name: Install openapi-python-client
-        run: pipx install openapi-python-client
+      - name: Set up uv (provides uvx for openapi-python-client)
+        uses: astral-sh/setup-uv@v3
       - name: Regenerate all SDKs
         run: make sdks
       - name: Open PR if SDKs changed
