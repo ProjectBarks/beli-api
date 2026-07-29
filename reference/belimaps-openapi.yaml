@@ -1,0 +1,804 @@
+openapi: 3.1.0
+info:
+  title: Beli Private API
+  description: |
+    Unofficial OpenAPI contract for Beli's Cloud Run backends, reverse-engineered
+    from app traffic and confirmed live. Not affiliated with Beli.
+    Required on every request: Origin https://localhost, Referer https://localhost/,
+    and a browser-like User-Agent (missing Origin → 403).
+  version: 0.1.0
+  license:
+    name: MIT
+
+servers:
+  - url: https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app
+    description: ONBOARD — auth + logged-in
+    x-beli-host: ONBOARD
+  - url: https://backoffice-service-t57o3dxfca-nn.a.run.app
+    description: API — main backoffice (feed, lists, business, social)
+    x-beli-host: API
+  - url: https://backoffice-service-recs-t57o3dxfca-nn.a.run.app
+    description: RECS — recommendations; many API routes also respond here
+    x-beli-host: RECS
+
+tags:
+  - name: auth
+  - name: discovery
+  - name: social
+  - name: scores
+  - name: lists
+  - name: photos
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token from POST /api/token/ (~20 min). Refresh via /api/token/refresh/.
+
+  parameters:
+    UserIdPath:
+      name: userId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Uuid"
+      description: Beli user UUID
+
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+
+    IntId:
+      type: integer
+
+    PlaceId:
+      type: string
+      minLength: 1
+      description: Google Places place_id (e.g. ChIJ…)
+
+    Category:
+      type: string
+      enum: [RES, BAR, COFFEE, BAKERY, DESSERT, OTHER, BAK]
+      description: List/category codes. RES default; BAK observed on bakery scores.
+
+    LoginRequest:
+      type: object
+      required: [phone_no, password]
+      properties:
+        phone_no:
+          type: string
+          pattern: '^\+\d{8,15}$'
+          description: E.164 phone, e.g. +15551234567
+          examples: ["+15551234567"]
+        password:
+          type: string
+          minLength: 1
+
+    TokenPair:
+      type: object
+      required: [access, refresh]
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+
+    RefreshRequest:
+      type: object
+      required: [refresh]
+      properties:
+        refresh:
+          type: string
+
+    RefreshResponse:
+      type: object
+      required: [access]
+      properties:
+        access:
+          type: string
+
+    LoggedInUser:
+      type: object
+      required: [id, username]
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        username:
+          type: string
+        full_name:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone_no:
+          type: string
+        email:
+          type: string
+          nullable: true
+        home_city:
+          type: string
+          nullable: true
+        profile_photo:
+          type: string
+          nullable: true
+      additionalProperties: true
+
+    LoggedInResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/LoggedInUser"
+
+    Business:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          $ref: "#/components/schemas/IntId"
+        place_id:
+          type: string
+          nullable: true
+        name:
+          type: string
+        status:
+          type: string
+        city:
+          type: string
+          nullable: true
+        borough:
+          type: string
+          nullable: true
+        neighborhood:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        lat:
+          type: number
+          nullable: true
+        lng:
+          type: number
+          nullable: true
+        price:
+          type: number
+          nullable: true
+        price_key:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        phone_number:
+          type: string
+          nullable: true
+        cuisines:
+          type: array
+          items:
+            type: string
+        quick_link:
+          type: string
+          nullable: true
+        tz:
+          type: string
+          nullable: true
+        default_category:
+          type: string
+      additionalProperties: true
+
+    BusinessResponse:
+      oneOf:
+        - type: object
+          required: [results]
+          properties:
+            results:
+              type: array
+              items:
+                $ref: "#/components/schemas/Business"
+        - $ref: "#/components/schemas/Business"
+
+    SearchPrediction:
+      type: object
+      required: [place_id]
+      properties:
+        place_id:
+          $ref: "#/components/schemas/PlaceId"
+        business:
+          type: integer
+          nullable: true
+        structured_formatting:
+          type: object
+          properties:
+            main_text:
+              type: string
+            secondary_text:
+              type: string
+        types:
+          type: array
+          items:
+            type: string
+        distance_meters:
+          type: number
+          nullable: true
+        default_category:
+          type: string
+          nullable: true
+      additionalProperties: true
+
+    SearchResponse:
+      type: object
+      required: [predictions]
+      properties:
+        predictions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchPrediction"
+
+    MemberSummary:
+      type: object
+      required: [id, username]
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        username:
+          type: string
+        full_name:
+          type: string
+          nullable: true
+        first_name:
+          type: string
+        last_name:
+          type: string
+        instagram_url:
+          type: string
+          nullable: true
+        tiktok_url:
+          type: string
+          nullable: true
+        profile_photo:
+          type: string
+          nullable: true
+        photo:
+          type: string
+          nullable: true
+        public:
+          type: boolean
+        company:
+          type: string
+          nullable: true
+        school:
+          type: string
+          nullable: true
+        created_dt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    MemberListResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemberSummary"
+
+    NetworkScore:
+      type: object
+      required: [user_id, business_id, value, category]
+      properties:
+        user_id:
+          $ref: "#/components/schemas/Uuid"
+        business_id:
+          $ref: "#/components/schemas/IntId"
+        value:
+          type: number
+          description: Beli 0–10 style score
+        category:
+          type: string
+        num_visits:
+          type: integer
+        labels:
+          type: array
+          items:
+            type: string
+      additionalProperties: true
+
+    NetworkScoreList:
+      type: array
+      items:
+        $ref: "#/components/schemas/NetworkScore"
+
+    RecItem:
+      type: object
+      required: [business_id, expected_percentile]
+      properties:
+        business_id:
+          $ref: "#/components/schemas/IntId"
+        expected_percentile:
+          type: number
+      additionalProperties: true
+
+    RecList:
+      type: array
+      items:
+        $ref: "#/components/schemas/RecItem"
+
+    RankingListItem:
+      type: object
+      required: [id, user, business]
+      properties:
+        id:
+          $ref: "#/components/schemas/IntId"
+        user:
+          $ref: "#/components/schemas/Uuid"
+        business:
+          $ref: "#/components/schemas/Business"
+        score:
+          type: number
+          nullable: true
+        value:
+          type: number
+          nullable: true
+        category:
+          type: string
+        visit_dates:
+          type: array
+          items:
+            type: string
+        created_dt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    RankingListResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/RankingListItem"
+
+    BookmarkListItem:
+      type: object
+      required: [id, user, business]
+      properties:
+        id:
+          $ref: "#/components/schemas/IntId"
+        user:
+          $ref: "#/components/schemas/Uuid"
+        business:
+          $ref: "#/components/schemas/Business"
+      additionalProperties: true
+
+    BookmarkListResponse:
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: "#/components/schemas/BookmarkListItem"
+      description: 'Category-keyed map, e.g. { "Restaurants": [...] }'
+
+    PhotoRecord:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/IntId"
+        user:
+          oneOf:
+            - $ref: "#/components/schemas/Uuid"
+            - type: string
+        business:
+          oneOf:
+            - $ref: "#/components/schemas/IntId"
+            - type: string
+        image:
+          type: string
+          nullable: true
+        thumbnail:
+          type: string
+          nullable: true
+        bb_image:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+      additionalProperties: true
+
+    PhotoListResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          oneOf:
+            - type: array
+              items:
+                $ref: "#/components/schemas/PhotoRecord"
+            - $ref: "#/components/schemas/PhotoRecord"
+
+    ErrorDetail:
+      type: object
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+
+paths:
+  /api/token/:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login by phone + password (DRF SimpleJWT)
+      servers:
+        - url: https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Access + refresh tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPair"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+
+  /api/token/refresh/:
+    post:
+      operationId: refreshToken
+      tags: [auth]
+      summary: Exchange refresh for a new access token (refresh is NOT rotated)
+      servers:
+        - url: https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: New access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshResponse"
+        "401":
+          description: Refresh invalid or expired
+
+  /api/user/logged-in/:
+    get:
+      operationId: loggedIn
+      tags: [auth]
+      summary: Current authenticated user
+      servers:
+        - url: https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Logged-in user envelope
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoggedInResponse"
+
+  /api/search-app/:
+    get:
+      operationId: searchPlaces
+      tags: [discovery]
+      summary: Place typeahead (Google Places proxied)
+      servers:
+        - url: https://backoffice-service-t57o3dxfca-nn.a.run.app
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: term
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: city
+          in: query
+          schema:
+            type: string
+            default: ""
+        - name: coords
+          in: query
+          schema:
+            type: string
+            description: "lat,lng"
+        - name: user
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uuid"
+      responses:
+        "200":
+          description: Predictions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+
+  /api/business/:
+    get:
+      operationId: getBusiness
+      tags: [discovery]
+      summary: Business detail by id or Google place_id (get-or-create)
+      servers:
+        - url: https://backoffice-service-t57o3dxfca-nn.a.run.app
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          schema:
+            type: integer
+        - name: place_id
+          in: query
+          schema:
+            $ref: "#/components/schemas/PlaceId"
+        - name: from_business_page
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        "200":
+          description: Business or results wrapper
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessResponse"
+        "400":
+          description: No identifier
+
+  /api/user/search/{viewer}/{query}/:
+    get:
+      operationId: searchMembers
+      tags: [social]
+      summary: Member search by name/username
+      servers:
+        - url: https://backoffice-service-t57o3dxfca-nn.a.run.app
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: viewer
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uuid"
+        - name: query
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: include_followed
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Member matches
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberListResponse"
+
+  /api/following/{userId}/:
+    get:
+      operationId: getFollowing
+      tags: [social]
+      summary: People the user follows
+      servers:
+        - url: https://backoffice-service-t57o3dxfca-nn.a.run.app
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserIdPath"
+      responses:
+        "200":
+          description: Following list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberListResponse"
+
+  /api/followers/{userId}/:
+    get:
+      operationId: getFollowers
+      tags: [social]
+      summary: Followers of the user
+      servers:
+        - url: https://backoffice-service-t57o3dxfca-nn.a.run.app
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserIdPath"
+      responses:
+        "200":
+          description: Followers list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberListResponse"
+
+  /api/scores/{userId}/:
+    get:
+      operationId: getNetworkScores
+      tags: [scores]
+      summary: |
+        Network scores visible to the authenticated user. Returns a large list of
+        {user_id, business_id, value, category, …} across followed users.
+        Query params do NOT filter server-side — client-filter by business_id.
+        Cache aggressively; easy to 429 if polled per place.
+      servers:
+        - url: https://backoffice-service-t57o3dxfca-nn.a.run.app
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserIdPath"
+      responses:
+        "200":
+          description: Flat score list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NetworkScoreList"
+        "429":
+          description: Throttled
+
+  /api/recs/{userId}/:
+    get:
+      operationId: getRecs
+      tags: [scores]
+      summary: Personalized recommendation percentiles by business_id
+      servers:
+        - url: https://backoffice-service-recs-t57o3dxfca-nn.a.run.app
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserIdPath"
+      responses:
+        "200":
+          description: Rec list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecList"
+
+  /api/get-ranking/:
+    get:
+      operationId: getRanking
+      tags: [lists]
+      summary: A user's ranked Been list for a category (ignores business query filters)
+      servers:
+        - url: https://backoffice-service-t57o3dxfca-nn.a.run.app
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uuid"
+        - name: category
+          in: query
+          schema:
+            $ref: "#/components/schemas/Category"
+            default: RES
+      responses:
+        "200":
+          description: Been list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RankingListResponse"
+        "400":
+          description: Missing user identifier
+
+  /api/get-bookmark/:
+    get:
+      operationId: getBookmark
+      tags: [lists]
+      summary: A user's Want to Try bookmarks
+      servers:
+        - url: https://backoffice-service-t57o3dxfca-nn.a.run.app
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uuid"
+        - name: category
+          in: query
+          schema:
+            $ref: "#/components/schemas/Category"
+            default: RES
+      responses:
+        "200":
+          description: Category-keyed bookmarks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookmarkListResponse"
+
+  /api/user-business-photo/:
+    get:
+      operationId: listPhotos
+      tags: [photos]
+      summary: List a user's photos for a business
+      servers:
+        - url: https://backoffice-service-t57o3dxfca-nn.a.run.app
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user
+          in: query
+          schema:
+            $ref: "#/components/schemas/Uuid"
+        - name: business
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Photo list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoListResponse"
+
+  /api/user-business-photo/{photoId}/:
+    get:
+      operationId: getPhoto
+      tags: [photos]
+      summary: Photo (or cover) object by id
+      servers:
+        - url: https://backoffice-service-t57o3dxfca-nn.a.run.app
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: photoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Photo record envelope
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoListResponse"
