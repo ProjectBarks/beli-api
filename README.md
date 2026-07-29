@@ -19,126 +19,70 @@ cd beli-api && npm install
 
 ## Quickstart
 
-Two headers are mandatory on every request. Without `Origin` **and** a browser-like `User-Agent`, the backend replies `403 {"detail":"You do not have permission to perform this action."}`.
+Log in and call any of the 140 operations. Headers, host routing, bearer tokens, refresh, and request spacing are handled for you.
 
 ### TypeScript
 
 ```ts
-import { createClient } from "beli-api-ts/client";
-import { login, searchApp } from "beli-api-ts";
+import { createBeliClient } from "beli-api-ts/beli";
 
-const UA =
-  "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
-const ORIGIN = "capacitor://localhost";
-const ONBOARD = "https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app";
-const API = "https://backoffice-service-t57o3dxfca-nn.a.run.app";
+const beli = await createBeliClient({ email, password });
 
-const onboard = createClient({ baseUrl: ONBOARD });
-onboard.interceptors.request.use((req) => {
-  req.headers.set("User-Agent", UA);
-  return req;
-});
-
-const { data: tokens } = await login({
-  client: onboard,
-  headers: { Origin: ORIGIN },
-  body: { email: "you@example.com", password: process.env.BELI_PASSWORD! },
-});
-
-const api = createClient({ baseUrl: API });
-api.interceptors.request.use((req) => {
-  req.headers.set("User-Agent", UA);
-  req.headers.set("Authorization", `Bearer ${tokens!.access}`);
-  return req;
-});
-
-const { data } = await searchApp({
-  client: api,
-  headers: { Origin: ORIGIN },
-  query: { term: "coffee", city: "New York, NY" },
-});
+const me = await beli.getLoggedIn();
+const { data } = await beli.searchApp({ query: { term: "coffee", city: "New York, NY" } });
 ```
 
 ### Python
 
 ```python
-import os
-from beli_api import Client, AuthenticatedClient
-from beli_api.api.auth import login
+from beli_api.beli import connect
 from beli_api.api.search import search_app
-from beli_api.models import LoginRequest
 
-UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) "
-      "AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148")
-ONBOARD = "https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app"
-API = "https://backoffice-service-t57o3dxfca-nn.a.run.app"
-
-anon = Client(base_url=ONBOARD, headers={"User-Agent": UA})
-tokens = login.sync(client=anon, body=LoginRequest(
-    email="you@example.com", password=os.environ["BELI_PASSWORD"]))
-
-api = AuthenticatedClient(base_url=API, token=tokens.access, headers={"User-Agent": UA})
-results = search_app.sync(client=api, term="coffee", city="New York, NY")
+beli = connect(email, password)
+results = search_app.sync(client=beli, term="coffee", city="New York, NY")
 ```
-
-The Python SDK already defaults `Origin` on every generated call, so you only add the user agent.
 
 ### Go
 
 ```go
-package main
+beli, err := beliapi.Connect(ctx, beliapi.Options{Email: email, Password: password})
 
-import (
-	"context"
-	"net/http"
-	"os"
-
-	beliapi "github.com/ProjectBarks/beli-api/sdks/go"
-)
-
-const (
-	ua      = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
-	origin  = "capacitor://localhost"
-	onboard = "https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app"
-	apiHost = "https://backoffice-service-t57o3dxfca-nn.a.run.app"
-)
-
-func main() {
-	ctx := context.Background()
-	header := func(k, v string) beliapi.ClientOption {
-		return beliapi.WithRequestEditorFn(func(_ context.Context, req *http.Request) error {
-			req.Header.Set(k, v)
-			return nil
-		})
-	}
-
-	auth, _ := beliapi.NewClientWithResponses(onboard, header("User-Agent", ua))
-	email := "you@example.com"
-	tok, _ := auth.LoginWithResponse(ctx,
-		&beliapi.LoginParams{Origin: origin},
-		beliapi.LoginJSONRequestBody{Email: &email, Password: os.Getenv("BELI_PASSWORD")})
-
-	api, _ := beliapi.NewClientWithResponses(apiHost,
-		header("User-Agent", ua),
-		header("Authorization", "Bearer "+tok.JSON200.Access))
-
-	term := "coffee"
-	_, _ = api.SearchAppWithResponse(ctx, &beliapi.SearchAppParams{Origin: origin, Term: &term})
-}
+term := "coffee"
+res, err := beli.SearchAppWithResponse(ctx, &beliapi.SearchAppParams{Term: &term})
 ```
+
+## What the client does for you
+
+The API rejects anything that does not look like a browser, answering `403 {"detail":"You do not have permission to perform this action."}` when the `User-Agent` header is missing. Each client picks a realistic browser user agent at random and sends it with `Origin` on every request, so there is nothing to configure.
+
+Override it if you want a specific fingerprint, or a bigger pool from a package like [`user-agents`](https://www.npmjs.com/package/user-agents) or [`fake-useragent`](https://pypi.org/project/fake-useragent/):
+
+```ts
+await createBeliClient({ email, password, userAgent: new UserAgent().toString() });
+```
+
+```python
+connect(email, password, user_agent=UserAgent().random)
+```
+
+```go
+beliapi.Connect(ctx, beliapi.Options{Email: email, Password: password, UserAgent: ua})
+```
+
+Also handled: operations are routed to the right one of the four hosts, requests are spaced 350 ms apart because the API throttles bursts, and expired access tokens are refreshed before the call goes out.
 
 ## Authentication
 
-`POST /api/token/` takes `{email, password}` (it also accepts `phone_no` instead of `email`) and returns an access and refresh token. There is no API key or app secret.
+`POST /api/token/` takes `{email, password}` (`phone_no` works instead of `email`) and returns a token pair. There is no API key or app secret.
 
 | Token | Lifetime | Notes |
 |---|---|---|
-| access | 20 minutes | send as `Authorization: Bearer <token>` |
-| refresh | 7 days | `POST /api/token/refresh/`, and it is not rotated on use |
+| access | 20 minutes | sent as `Authorization: Bearer <token>` |
+| refresh | 7 days | not rotated on use |
 
-Reuse the access token until it is close to expiry, then refresh. Only log in again once the refresh token itself has expired. Store tokens yourself and keep them out of version control.
+Pass `accessToken` (TS/Go) or `access_token` (Python) instead of a password to reuse a token from a previous session and skip the login round trip.
 
-There is no published rate limit. Keep requests to roughly one every 350 ms, and expect `/api/followers/` and `/api/average-score/` to return 503 intermittently.
+Expect `/api/followers/` and `/api/average-score/` to return 503 intermittently, and note that rapid repeated logins are throttled.
 
 ## Coverage
 
@@ -161,9 +105,11 @@ npm run validate:spec        # lint + bundle + operation count
 cd validation && npx vitest run
 ```
 
-Editing `openapi/beli.yaml` is the only way to change the SDKs. The generators are [`@hey-api/openapi-ts`](https://github.com/hey-api/openapi-ts), [`openapi-python-client`](https://github.com/openapi-generators/openapi-python-client), and [`oapi-codegen`](https://github.com/oapi-codegen/oapi-codegen).
+Editing `openapi/beli.yaml` is the only way to change the generated code. The generators are [`@hey-api/openapi-ts`](https://github.com/hey-api/openapi-ts), [`openapi-python-client`](https://github.com/openapi-generators/openapi-python-client), and [`oapi-codegen`](https://github.com/oapi-codegen/oapi-codegen).
 
-The test suite runs offline by default. Set `BELI_EMAIL`, `BELI_PASSWORD`, `BELI_TEST_TARGET_USER`, and `BELI_TEST_TARGET_BUSINESS` to also run the live tests, which hit the real API. Writes are tested in reversible pairs (follow then unfollow, bookmark then remove, rank then delete), each cleaned up in a `finally` block. CI logs in once per run and only tests the operations whose spec entries changed in the diff.
+The convenience layers are hand-written and safe to edit: `sdks/typescript/beli.ts`, `sdks/go/beli.go`, and `sdkgen/python/beli.py` (copied into the Python package after each generation, since that generator rewrites its whole output directory).
+
+Tests run offline by default. Set `BELI_EMAIL`, `BELI_PASSWORD`, `BELI_TEST_TARGET_USER`, and `BELI_TEST_TARGET_BUSINESS` to also run the live tests against the real API. Writes are tested in reversible pairs (follow then unfollow, bookmark then remove, rank then delete), each cleaned up in a `finally` block. CI logs in once per run and only tests operations whose spec entries changed in the diff.
 
 ## License
 

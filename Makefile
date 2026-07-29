@@ -7,6 +7,8 @@ sdk-ts:
 	npx openapi-ts -f sdkgen/openapi-ts.config.ts
 sdk-py:
 	uvx openapi-python-client generate --path openapi/beli.yaml --config sdkgen/python-client.yaml --output-path sdks/python --overwrite
+	# the generator rewrites the whole package, so restore the hand-written layer
+	cp sdkgen/python/beli.py sdks/python/beli_api/beli.py
 sdk-go:
 	mkdir -p sdks/go
 	go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest -config sdkgen/oapi-codegen.yaml openapi/beli.yaml
