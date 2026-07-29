@@ -1,173 +1,170 @@
 # beli-api
 
-Unofficial **Beli API** client / SDK for the Beli restaurant-ranking app — TypeScript, Python, and Go, generated from a hand-written OpenAPI 3.1 spec.
+Unofficial SDKs for the [Beli](https://beliapp.com) restaurant-ranking app, in TypeScript, Python, and Go. All three are generated from one hand-written OpenAPI 3.1 spec covering 140 operations.
 
-[![License: MIT](https://img.shields.io/github/license/ProjectBarks/beli-api)](https://github.com/ProjectBarks/beli-api/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/github/license/ProjectBarks/beli-api)](LICENSE)
 [![validate](https://img.shields.io/github/actions/workflow/status/ProjectBarks/beli-api/validate.yml?branch=main&label=validate)](https://github.com/ProjectBarks/beli-api/actions/workflows/validate.yml)
 [![GitHub stars](https://img.shields.io/github/stars/ProjectBarks/beli-api?style=social)](https://github.com/ProjectBarks/beli-api)
 
-> Unofficial, community-maintained. Not affiliated with, endorsed by, or supported by Beli.
-> Reverse-engineered from observed traffic; may break without notice. Use your own account
-> credentials at your own risk.
+> Not affiliated with, endorsed by, or supported by Beli. Reverse-engineered from observed traffic, so it may break without notice. You use your own account credentials at your own risk.
 
-## Why
+## Install
 
-[Beli](https://beliapp.com) (the restaurant-ranking / "food Letterboxd" app) has no public API. This
-repo is a single hand-written **OpenAPI 3.1** spec — reverse-engineered from real app traffic and
-cross-checked against independent community efforts — covering 140 operations across auth, search,
-business detail, social graph, rankings, feed, lists, notifications, reservations, payments, and
-telemetry. From that one spec, `make sdks` regenerates fully typed **TypeScript**, **Python**, and
-**Go** clients, so you don't have to hand-roll HTTP calls or guess at request/response shapes.
+Nothing is on npm, PyPI, or pkg.go.dev yet. Clone the repo and use the SDKs from `sdks/`.
+
+```bash
+git clone https://github.com/ProjectBarks/beli-api
+cd beli-api && npm install
+```
 
 ## Quickstart
 
-The packages are **not yet published** to npm / PyPI / pkg.go.dev — registry publishing is planned.
-For now, use the generated SDKs directly from this repo (`sdks/typescript`, `sdks/python`, `sdks/go`).
-
-Every authenticated request needs a bearer access token *and* an `Origin: https://localhost` header
-(the backend 403s without it). Log in once with your email/password to get a token pair, then
-configure the client to attach both automatically.
+Two headers are mandatory on every request. Without `Origin` **and** a browser-like `User-Agent`, the backend replies `403 {"detail":"You do not have permission to perform this action."}`.
 
 ### TypeScript
 
 ```ts
-import { client, login, searchApp } from "./sdks/typescript/src";
+import { createClient } from "beli-api-ts/client";
+import { login, searchApp } from "beli-api-ts";
 
-const ORIGIN = { Origin: "https://localhost" };
+const UA =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
+const ORIGIN = "capacitor://localhost";
+const ONBOARD = "https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app";
+const API = "https://backoffice-service-t57o3dxfca-nn.a.run.app";
 
-const { data: tokens } = await login({
-  headers: ORIGIN,
-  body: { email: "you@example.com", password: "hunter2" },
+const onboard = createClient({ baseUrl: ONBOARD });
+onboard.interceptors.request.use((req) => {
+  req.headers.set("User-Agent", UA);
+  return req;
 });
 
-// bearer token is reused for every subsequent call made with this client
-client.setConfig({ auth: () => tokens!.access });
+const { data: tokens } = await login({
+  client: onboard,
+  headers: { Origin: ORIGIN },
+  body: { email: "you@example.com", password: process.env.BELI_PASSWORD! },
+});
 
-const { data } = await searchApp({ headers: ORIGIN });
+const api = createClient({ baseUrl: API });
+api.interceptors.request.use((req) => {
+  req.headers.set("User-Agent", UA);
+  req.headers.set("Authorization", `Bearer ${tokens!.access}`);
+  return req;
+});
+
+const { data } = await searchApp({
+  client: api,
+  headers: { Origin: ORIGIN },
+  query: { term: "coffee", city: "New York, NY" },
+});
 ```
 
 ### Python
 
 ```python
-from beli_api import AuthenticatedClient, Client
+import os
+from beli_api import Client, AuthenticatedClient
 from beli_api.api.auth import login
 from beli_api.api.search import search_app
 from beli_api.models import LoginRequest
 
-# the "Origin: https://localhost" header defaults automatically on every generated call
-anon = Client(base_url="https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app")
-tokens = login.sync(client=anon, body=LoginRequest(email="you@example.com", password="hunter2"))
+UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) "
+      "AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148")
+ONBOARD = "https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app"
+API = "https://backoffice-service-t57o3dxfca-nn.a.run.app"
 
-client = AuthenticatedClient(
-    base_url="https://backoffice-service-t57o3dxfca-nn.a.run.app",
-    token=tokens.access,
-)
-results = search_app.sync(client=client)
+anon = Client(base_url=ONBOARD, headers={"User-Agent": UA})
+tokens = login.sync(client=anon, body=LoginRequest(
+    email="you@example.com", password=os.environ["BELI_PASSWORD"]))
+
+api = AuthenticatedClient(base_url=API, token=tokens.access, headers={"User-Agent": UA})
+results = search_app.sync(client=api, term="coffee", city="New York, NY")
 ```
+
+The Python SDK already defaults `Origin` on every generated call, so you only add the user agent.
 
 ### Go
 
 ```go
+package main
+
 import (
-    "context"
-    "net/http"
+	"context"
+	"net/http"
+	"os"
 
-    beliapi "github.com/ProjectBarks/beli-api/sdks/go"
+	beliapi "github.com/ProjectBarks/beli-api/sdks/go"
 )
 
-email := "you@example.com"
-onboard, _ := beliapi.NewClient("https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app")
-resp, _ := onboard.Login(ctx, &beliapi.LoginParams{Origin: "https://localhost"},
-    beliapi.LoginJSONRequestBody{Email: &email, Password: "hunter2"})
-// decode resp.Body into beliapi.TokenPair -> access/refresh
-
-api, _ := beliapi.NewClient(
-    "https://backoffice-service-t57o3dxfca-nn.a.run.app",
-    beliapi.WithRequestEditorFn(func(_ context.Context, req *http.Request) error {
-        req.Header.Set("Authorization", "Bearer "+accessToken)
-        return nil
-    }),
+const (
+	ua      = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
+	origin  = "capacitor://localhost"
+	onboard = "https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app"
+	apiHost = "https://backoffice-service-t57o3dxfca-nn.a.run.app"
 )
-resp, _ = api.SearchApp(ctx, &beliapi.SearchAppParams{Origin: "https://localhost"})
+
+func main() {
+	ctx := context.Background()
+	header := func(k, v string) beliapi.ClientOption {
+		return beliapi.WithRequestEditorFn(func(_ context.Context, req *http.Request) error {
+			req.Header.Set(k, v)
+			return nil
+		})
+	}
+
+	auth, _ := beliapi.NewClientWithResponses(onboard, header("User-Agent", ua))
+	email := "you@example.com"
+	tok, _ := auth.LoginWithResponse(ctx,
+		&beliapi.LoginParams{Origin: origin},
+		beliapi.LoginJSONRequestBody{Email: &email, Password: os.Getenv("BELI_PASSWORD")})
+
+	api, _ := beliapi.NewClientWithResponses(apiHost,
+		header("User-Agent", ua),
+		header("Authorization", "Bearer "+tok.JSON200.Access))
+
+	term := "coffee"
+	_, _ = api.SearchAppWithResponse(ctx, &beliapi.SearchAppParams{Origin: origin, Term: &term})
+}
 ```
 
-> Registry publishing (npm / PyPI / pkg.go.dev) is planned.
+## Authentication
 
-## Features
+`POST /api/token/` takes `{email, password}` (it also accepts `phone_no` instead of `email`) and returns an access and refresh token. There is no API key or app secret.
 
-| Feature | Detail |
-|---|---|
-| Auth & token lifecycle | Login with email/password; access tokens live 20 min and refresh tokens live 7 days (not rotated) — reuse the cached access token, refresh near expiry, re-login only once the refresh token itself expires |
-| Endpoint coverage | 140 operations across 12 modules (auth, profile, search, business, social, ranking, feed, lists, notifications, reservations, payments, telemetry) |
-| Languages | TypeScript, Python, Go — all generated from one OpenAPI 3.1 spec, kept in sync |
-| Typed | Full request/response types (interfaces, Pydantic-style dataclasses, Go structs) — no hand-maintained model drift |
-| Rate-limit courtesy | No documented server rate limit; SDKs default to a polite **~350 ms** interval between requests |
-| CI | Change-tree-gated live validation — endpoint tests only run against the operations affected by a given diff |
+| Token | Lifetime | Notes |
+|---|---|---|
+| access | 20 minutes | send as `Authorization: Bearer <token>` |
+| refresh | 7 days | `POST /api/token/refresh/`, and it is not rotated on use |
 
-## Endpoint coverage
+Reuse the access token until it is close to expiry, then refresh. Only log in again once the refresh token itself has expired. Store tokens yourself and keep them out of version control.
 
-140 operations across 137 unique endpoints, hand-cataloged from live traffic across 12 modules. Full
-detail, HTTP verbs, hosts, and provenance live in [`openapi/beli.yaml`](openapi/beli.yaml) (and the
-human-readable [endpoint catalogue](reference/beli-api-reference.md#7-full-endpoint-catalogue)).
+There is no published rate limit. Keep requests to roughly one every 350 ms, and expect `/api/followers/` and `/api/average-score/` to return 503 intermittently.
 
-| Module | Operations |
-|---|---|
-| Auth & session | 5 |
-| Profile, settings & config | 21 |
-| Search & discovery | 13 |
-| Business detail | 22 |
-| Social graph | 18 |
-| Ranking, scores & bookmarks | 12 |
-| Feed & newsfeed | 11 |
-| Lists, guides & challenges | 12 |
-| Notifications | 11 |
-| Reservations | 7 |
-| Payments & external tokens | 2 |
-| Telemetry | 3 |
-| **Total** | **137** |
+## Coverage
 
-> 140 operations across 137 unique endpoints (3 endpoints expose more than one operation: follow
-> GET+POST, user-setting GET+POST, and the collapsed activity/bookmark operations).
+140 operations across 137 endpoints and 4 hosts. The spec at [`openapi/beli.yaml`](openapi/beli.yaml) is the source of truth.
 
-## Authentication & credentials
+| Module | Ops | | Module | Ops |
+|---|---|---|---|---|
+| Business detail | 22 | | Lists and challenges | 12 |
+| Profile and settings | 21 | | Feed | 11 |
+| Social graph | 18 | | Notifications | 11 |
+| Search and discovery | 13 | | Reservations | 7 |
+| Ranking and bookmarks | 12 | | Auth and session | 5 |
+| Telemetry | 3 | | Payments | 2 |
 
-There is no API key or app secret — the only credential is your Beli account's email/password,
-exchanged for a JWT access/refresh pair via `POST /api/token/`. Access tokens last 20 minutes,
-refresh tokens last 7 days and are **not rotated** on use. Store tokens yourself; never commit them.
-Every request additionally requires an `Origin` header (`https://localhost` works; the official app
-sends `capacitor://localhost`) or the backend returns `403`.
-
-There's no published rate limit, but be a good citizen: keep requests to roughly one every **350 ms**
-and avoid hammering endpoints known to intermittently `503` (e.g. `followers`, `average-score`).
-
-## Contributing / regenerating the SDKs
-
-The OpenAPI spec at [`openapi/beli.yaml`](openapi/beli.yaml) is the single source of truth. After
-editing it, regenerate all three SDKs with:
+## Development
 
 ```bash
-make sdks
+make sdks                    # regenerate all three SDKs from the spec
+npm run validate:spec        # lint + bundle + operation count
+cd validation && npx vitest run
 ```
 
-This runs `@hey-api/openapi-ts` (TypeScript), `openapi-python-client` (Python), and `oapi-codegen`
-(Go) against the spec. `make validate` (see `.github/workflows/validate.yml`) lints the spec and, on
-`main`, live-tests only the operations affected by the diff.
+Editing `openapi/beli.yaml` is the only way to change the SDKs. The generators are [`@hey-api/openapi-ts`](https://github.com/hey-api/openapi-ts), [`openapi-python-client`](https://github.com/openapi-generators/openapi-python-client), and [`oapi-codegen`](https://github.com/oapi-codegen/oapi-codegen).
 
-## Unverified / inferred
+The test suite runs offline by default. Set `BELI_EMAIL`, `BELI_PASSWORD`, `BELI_TEST_TARGET_USER`, and `BELI_TEST_TARGET_BUSINESS` to also run the live tests, which hit the real API. Writes are tested in reversible pairs (follow then unfollow, bookmark then remove, rank then delete), each cleaned up in a `finally` block. CI logs in once per run and only tests the operations whose spec entries changed in the diff.
 
-Most of this spec is corroborated by live HAR captures. A few pieces are not:
+## License
 
-- `POST /api/token/refresh/` is confirmed observed live.
-- `createBookmark` / `removeBookmark` (`/api/add-bookmark/`, `/api/remove-bookmark/`) are marked
-  `x-beli-unverified: true` in the spec — their request bodies are inferred from an external
-  community client (beli-mcp), not captured directly.
-- The `RECS` host (`/api/recs/{uuid}/`, recommendations) is documented from external sources only —
-  it never appeared in our own captures.
-
-See [`reference/beli-api-reference.md`](reference/beli-api-reference.md) for full provenance.
-
----
-
-**Keywords:** Beli API, Beli SDK, unofficial Beli API, Beli restaurant app API, reverse-engineered
-API, restaurant ranking API, OpenAPI 3.1, TypeScript SDK, Python SDK, Go SDK, foodie app API,
-Beli client library, REST API wrapper.
+MIT
