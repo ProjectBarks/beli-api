@@ -37,13 +37,13 @@ components:
         full_name: { type: string }
         username: { type: string }
         created_dt: { type: string, format: date-time }
-        instagram_url: { type: string, nullable: true }
-        tiktok_url: { type: string, nullable: true }
-        photo: { type: string, nullable: true }
-        profile_photo: { type: string, nullable: true }
+        instagram_url: { type: [string, "null"] }
+        tiktok_url: { type: [string, "null"] }
+        photo: { type: [string, "null"] }
+        profile_photo: { type: [string, "null"] }
         public: { type: boolean }
-        school: { type: string, nullable: true }
-        company: { type: string, nullable: true }
+        school: { type: [string, "null"] }
+        company: { type: [string, "null"] }
         has_supper_club: { type: boolean }
         has_vip: { type: boolean }
         is_playlist_eligible: { type: boolean }
@@ -56,41 +56,52 @@ components:
         - $ref: "#/components/schemas/User"
         - type: object
           properties:
-            phone_no: { type: string, nullable: true }
-            email: { type: string, nullable: true }
-            home_city: { type: string, nullable: true }
-            bio: { type: string, nullable: true }
+            phone_no: { type: [string, "null"] }
+            email: { type: [string, "null"] }
+            home_city: { type: [string, "null"] }
+            bio: { type: [string, "null"] }
             referrer: {}
-            referral_link: { type: string, nullable: true }
+            referral_link: { type: [string, "null"] }
             sessions: {}
             reservation_priority: {}
-            qr_code: { type: string, nullable: true }
+            qr_code: { type: [string, "null"] }
             following:
-              type: boolean
-              nullable: true
+              type: [boolean, "null"]
               description: Present (bool) only in search-result contexts.
     Business:
       type: object
       properties:
         id: { type: integer }
-        place_id: { type: string, nullable: true }
+        place_id: { type: [string, "null"] }
         name: { type: string }
         status: { type: string }
-        city: { type: string, nullable: true }
-        borough: { type: string, nullable: true }
+        city: { type: [string, "null"] }
+        borough: { type: [string, "null"] }
         lat: { type: number }
         lng: { type: number }
-        price: { type: integer, nullable: true }
-        price_key: { type: string, nullable: true }
-        neighborhood: { type: string, nullable: true }
-        country: { type: string, nullable: true }
-        website: { type: string, nullable: true }
-        phone_number: { type: string, nullable: true }
+        price: { type: [integer, "null"] }
+        price_key: { type: [string, "null"] }
+        neighborhood: { type: [string, "null"] }
+        country: { type: [string, "null"] }
+        website: { type: [string, "null"] }
+        phone_number: { type: [string, "null"] }
         cuisines: { type: array, items: { type: string } }
-        default_category: { type: string, nullable: true }
-        quick_link: { type: string, nullable: true }
-        tz: { type: string, nullable: true }
+        default_category: { type: [string, "null"] }
+        quick_link: { type: [string, "null"] }
+        tz: { type: [string, "null"] }
         has_cover_photo: { type: boolean }
+        has_res_links: { type: boolean }
+        has_delivery_links: { type: boolean }
+        has_no_show_fee: { type: boolean }
+        reservation_venue_id: { type: [integer, "null"] }
+        businesshours_set: { type: array, items: { $ref: "#/components/schemas/BusinessHours" } }
+        businessdistinction_set:
+          type: array
+          items: { type: object }
+          description: Shape not pinned down by reference §8.
+        businessHoursConfig:
+          type: object
+          description: Shape not pinned down by reference §8.
       required: [id, name]
     BusinessHours:
       type: object
@@ -106,9 +117,9 @@ components:
         business_id: { type: integer }
         value: { type: number }
         category: { type: string }
-        num_visits: { type: integer, nullable: true }
-        notification_id: { type: integer, nullable: true }
-        sent_dt: { type: string, format: date-time, nullable: true }
+        num_visits: { type: [integer, "null"] }
+        notification_id: { type: [integer, "null"] }
+        sent_dt: { type: [string, "null"], format: date-time }
     CachedScore:
       type: object
       properties:
@@ -122,31 +133,30 @@ components:
       properties:
         id: { type: integer }
         image: { type: string }
-        thumbnail: { type: string, nullable: true }
-        bb_image: { type: string, nullable: true }
-        bb_thumbnail: { type: string, nullable: true }
-        description: { type: string, nullable: true }
+        thumbnail: { type: [string, "null"] }
+        bb_image: { type: [string, "null"] }
+        bb_thumbnail: { type: [string, "null"] }
+        description: { type: [string, "null"] }
         order: { type: integer }
-        favorite_dish: { type: string, nullable: true }
+        favorite_dish: { type: [string, "null"] }
         created_dt: { type: string, format: date-time }
         status: { type: string }
         likes: { type: array, items: { type: string, format: uuid } }
-        user: {}
-        business: {}
+        user: { type: string, format: uuid }
+        business: { type: integer }
       required: [id]
     PublishedList:
       type: object
       properties:
         id: { type: integer }
         title: { type: string }
-        description: { type: string, nullable: true }
+        description: { type: [string, "null"] }
         cover_photo: {}
         ranked: { type: boolean }
-        category: { type: string, nullable: true }
-        quick_link: { type: string, nullable: true }
+        category: { type: [string, "null"] }
+        quick_link: { type: [string, "null"] }
         challenge_info:
-          type: object
-          nullable: true
+          type: [object, "null"]
           properties:
             is_joined: { type: boolean }
             progress: { type: number }
@@ -160,23 +170,23 @@ components:
         id: { type: integer }
         event_type: { type: string, description: "e.g. ADD, BOOKMARK, … (not exhaustively observed)" }
         sent_dt: { type: string, format: date-time }
-        user1: {}
-        title: { type: string, nullable: true }
-        body: { type: string, nullable: true }
-        business: {}
-        category: { type: string, nullable: true }
-        score: { type: number, nullable: true }
-        num_visits: { type: integer, nullable: true }
-        business_full: {}
+        user1: { type: string, format: uuid }
+        title: { type: [string, "null"] }
+        body: { type: [string, "null"] }
+        business: { type: integer }
+        category: { type: [string, "null"] }
+        score: { type: [number, "null"] }
+        num_visits: { type: [integer, "null"] }
+        business_full: { $ref: "#/components/schemas/Business" }
       required: [id]
     FollowEdge:
       type: object
       properties:
         id: { type: integer }
-        request_dt: { type: string, format: date-time, nullable: true }
-        accept_dt: { type: string, format: date-time, nullable: true }
-        unfollow_dt: { type: string, format: date-time, nullable: true }
-        unaccept_dt: { type: string, format: date-time, nullable: true }
+        request_dt: { type: [string, "null"], format: date-time }
+        accept_dt: { type: [string, "null"], format: date-time }
+        unfollow_dt: { type: [string, "null"], format: date-time }
+        unaccept_dt: { type: [string, "null"], format: date-time }
         status: { type: string, enum: [ACTIVE, INACTIVE] }
         follower: { type: string, format: uuid }
         followed: { type: string, format: uuid }
@@ -187,9 +197,9 @@ components:
         Slot metadata and availability keys vary by query/platform; treat
         as a partial contract beyond the fields listed here.
       properties:
-        id: {}
-        user: {}
-        business: {}
+        id: { type: integer }
+        user: { $ref: "#/components/schemas/User" }
+        business: { $ref: "#/components/schemas/Business" }
         reservation_platforms:
           type: object
           additionalProperties:
@@ -201,19 +211,19 @@ components:
       properties:
         id: { type: integer }
         name: { type: string }
-        display: { type: string, nullable: true }
-        table: { type: string, nullable: true }
-        category: { type: string, nullable: true }
+        display: { type: [string, "null"] }
+        table: { type: [string, "null"] }
+        category: { type: [string, "null"] }
         is_filter: { type: boolean }
       required: [id, name]
     UserSetting:
       type: object
       properties:
-        user: {}
+        user: { type: string, format: uuid }
         field: { $ref: "#/components/schemas/Field" }
         value: {}
-        start_dt: { type: string, format: date-time, nullable: true }
-        end_dt: { type: string, format: date-time, nullable: true }
+        start_dt: { type: [string, "null"], format: date-time }
+        end_dt: { type: [string, "null"], format: date-time }
     TokenPair:
       type: object
       properties: { access: { type: string }, refresh: { type: string } }
@@ -243,8 +253,8 @@ components:
       type: object
       properties:
         count: { type: integer }
-        next: { type: string, nullable: true }
-        previous: { type: string, nullable: true }
+        next: { type: [string, "null"] }
+        previous: { type: [string, "null"] }
         results: { type: array, items: {} }
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
