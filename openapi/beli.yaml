@@ -316,6 +316,17 @@ paths:
       responses:
         "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/UserSetting" } } } }
         "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+    get:
+      operationId: getUserSetting
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: Read user settings (EAV read)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: user, in: query, required: false, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
   /api/user/bio/:
     get:
       operationId: getUserBio
