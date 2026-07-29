@@ -1,7 +1,12 @@
 name: validate
 on:
   push: { branches: [main], paths: ["openapi/**", "validation/**", "sdks/typescript/**"] }
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      run_all:
+        description: "Live-test every endpoint instead of only the ones the diff touched"
+        type: boolean
+        default: false
 permissions: { contents: read }
 jobs:
   live-validate:
@@ -22,9 +27,13 @@ jobs:
       - name: Compute affected operations
         id: aff
         run: |
-          BASE="${{ github.event.before || github.sha }}~1"
           echo "ops<<EOF" >> "$GITHUB_OUTPUT"
-          node scripts/affected-endpoints.mjs "$BASE" "${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          if [ "${{ inputs.run_all }}" = "true" ]; then
+            echo "ALL" >> "$GITHUB_OUTPUT"
+          else
+            BASE="${{ github.event.before || github.sha }}~1"
+            node scripts/affected-endpoints.mjs "$BASE" "${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
           echo "EOF" >> "$GITHUB_OUTPUT"
       - name: Run offline unit tests (always)
         run: cd validation && npx vitest run tests/auth.spec.ts tests/descriptor.spec.ts tests/changed.spec.ts
