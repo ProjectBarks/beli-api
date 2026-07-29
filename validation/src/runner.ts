@@ -37,6 +37,35 @@ export type OpResult = {
   reason?: string;
 };
 
+// --- change-tree gating (Task 16) -----------------------------------------------------------
+//
+// CI (`.github/workflows/validate.yml`) computes the set of operationIds whose spec changed
+// (via `scripts/affected-endpoints.mjs`) and passes it to the live-spec step as `AFFECTED_OPS`
+// — a newline- or comma-separated list of operationIds, or the literal string "ALL" meaning
+// every read descriptor changed (e.g. a change under `validation/src/`, which can affect how
+// every op is exercised). `read.live.spec.ts` / `write.live.spec.ts` consult `isAffected` so a
+// spec-only diff exercises only the ops that actually changed, after a single login.
+//
+// Unset entirely (e.g. running this suite locally with real creds but no CI-computed gate) is
+// treated as "ALL" so ad-hoc local runs against the live backend aren't silently no-ops.
+export function affectedSet(): Set<string> | "ALL" {
+  const raw = process.env.AFFECTED_OPS;
+  if (raw === undefined || raw.trim() === "") return "ALL";
+  const trimmed = raw.trim();
+  if (trimmed === "ALL") return "ALL";
+  return new Set(
+    trimmed
+      .split(/[\n,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
+}
+
+export function isAffected(id: string): boolean {
+  const set = affectedSet();
+  return set === "ALL" || set.has(id);
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function decodeUserId(accessToken: string): string {

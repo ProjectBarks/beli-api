@@ -1,0 +1,36 @@
+name: validate
+on:
+  push: { branches: [main], paths: ["openapi/**", "validation/**", "sdks/typescript/**"] }
+  workflow_dispatch: {}
+permissions: { contents: read }
+jobs:
+  live-validate:
+    if: github.repository == 'ProjectBarks/beli-api'   # never fork PRs → secrets safe
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Build TS SDK
+        run: cd sdks/typescript && npm ci && npm run build
+      - name: Install validation deps
+        run: cd validation && npm ci
+      - name: Compute affected operations
+        id: aff
+        run: |
+          BASE="${{ github.event.before || github.sha }}~1"
+          echo "ops<<EOF" >> "$GITHUB_OUTPUT"
+          node scripts/affected-endpoints.mjs "$BASE" "${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+      - name: Run offline unit tests (always)
+        run: cd validation && npx vitest run tests/auth.spec.ts tests/descriptor.spec.ts tests/changed.spec.ts
+      - name: Run live tests for affected ops (single login)
+        if: steps.aff.outputs.ops != ''
+        env:
+          BELI_EMAIL: ${{ secrets.BELI_EMAIL }}
+          BELI_PASSWORD: ${{ secrets.BELI_PASSWORD }}
+          BELI_TEST_TARGET_USER: ${{ secrets.BELI_TEST_TARGET_USER }}
+          BELI_TEST_TARGET_BUSINESS: ${{ secrets.BELI_TEST_TARGET_BUSINESS }}
+          AFFECTED_OPS: ${{ steps.aff.outputs.ops }}
+        run: cd validation && npx vitest run tests/read.live.spec.ts tests/write.live.spec.ts
