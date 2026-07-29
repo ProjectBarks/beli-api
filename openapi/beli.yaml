@@ -25,7 +25,327 @@ tags:
   - { name: reservations }
   - { name: payments }
   - { name: telemetry }
-paths: {}
+paths:
+  /api/token/:
+    post:
+      operationId: login
+      tags: [auth]
+      servers: [{ url: "https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app" }]
+      security: []
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      summary: Login (email or phone + password) — SimpleJWT
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/LoginRequest" } } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/TokenPair" } } } }
+        "401": { description: invalid, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/token/refresh/:
+    post:
+      operationId: refreshToken
+      tags: [auth]
+      servers: [{ url: "https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app" }]
+      security: []
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      summary: Refresh an access token — refresh token itself is not rotated
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/RefreshRequest" } } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/AccessToken" } } } }
+  /api/user/logged-in/:
+    get:
+      operationId: getLoggedIn
+      tags: [auth]
+      servers: [{ url: "https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app" }]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      summary: Current user's full profile (incl. email, phone_no, home_city, referrer, sessions)
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user/u/{uuid}/:
+    put:
+      operationId: updateUser
+      tags: [auth]
+      security: [{ bearerAuth: [] }]
+      summary: Session heartbeat — sync FCM/live-activity tokens & session info; returns full user object
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fcm_token: { type: [string, "null"] }
+                live_activity_token: { type: [string, "null"] }
+                sessions: {}
+                last_login: { type: [string, "null"], format: date-time }
+                version: { type: [string, "null"] }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/User" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/device/{deviceId}/:
+    put:
+      operationId: updateDevice
+      tags: [auth]
+      security: [{ bearerAuth: [] }]
+      summary: Update device attribution record (AppsFlyer); request body not captured
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: deviceId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Body not captured in reference traffic (AppsFlyer attribution fields).
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/app-rank/{uuid}/:
+    get:
+      operationId: getAppRank
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: App-wide rank for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/check-user-settings/:
+    get:
+      operationId: getCheckUserSettings
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: Check user settings status
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/count-ranked-this-year/{uuid}/:
+    get:
+      operationId: getCountRankedThisYear
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: Count of places ranked by the user this year
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/creator-subscribe/:
+    get:
+      operationId: getCreatorSubscribe
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: Creator-subscribe status/config
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/datauserinteger/:
+    get:
+      operationId: getDatauserinteger
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: EAV integer-valued user fields (generic field layer, see reference §4)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/glassfy-config/:
+    get:
+      operationId: getGlassfyConfig
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: Glassfy (in-app-purchase) config
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/has-contacts/{uuid}/:
+    get:
+      operationId: getHasContacts
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: Whether the user has synced device contacts
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/invites-feature-progress/{uuid}/:
+    get:
+      operationId: getInvitesFeatureProgress
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: Invites feature progress for the user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/invites-remaining/{uuid}/:
+    get:
+      operationId: getInvitesRemaining
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: Remaining invites for the user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/number-params-before-user/:
+    get:
+      operationId: getNumberParamsBeforeUser
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: EAV numeric field definitions available before user context (see reference §4)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/number-params/{uuid}/:
+    get:
+      operationId: getNumberParams
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: EAV numeric field values for a user (see reference §4)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/profile-progress/{uuid}/:
+    get:
+      operationId: getProfileProgress
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: Onboarding/profile-completion progress for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/sharesheet-config/:
+    get:
+      operationId: getSharesheetConfig
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: Native share-sheet config
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/taste-profile-config/{uuid}/:
+    get:
+      operationId: getTasteProfileConfig
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: Taste-profile config for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/text-params-before-user/:
+    get:
+      operationId: getTextParamsBeforeUser
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: EAV text field definitions available before user context (see reference §4)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/text-params/{uuid}/:
+    get:
+      operationId: getTextParams
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: EAV text field values for a user (see reference §4)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/trigger/:
+    get:
+      operationId: getTrigger
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: In-app nudge/trigger config
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-setting/:
+    post:
+      operationId: createUserSetting
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: Write a user setting (EAV write) — `POST {user, field_name, value}`
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user: { type: string, format: uuid }
+                field_name: { type: string }
+                value: {}
+              required: [user, field_name, value]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/UserSetting" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user/bio/:
+    get:
+      operationId: getUserBio
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: A user's bio text
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user/member/:
+    get:
+      operationId: getUserMember
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: Membership/account info for a user
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user/streak/:
+    get:
+      operationId: getUserStreak
+      tags: [profile]
+      security: [{ bearerAuth: [] }]
+      summary: A user's ranking streak
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
 components:
   schemas:
     User:
