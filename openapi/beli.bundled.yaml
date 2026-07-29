@@ -1,0 +1,4674 @@
+openapi: 3.1.0
+info:
+  title: Beli API (Unofficial)
+  version: 0.1.0
+  description: |
+    Unofficial, community-maintained. Not affiliated with, endorsed by, or supported by Beli. Reverse-engineered from observed traffic; may break without notice. Use your own account credentials at your own risk.
+  license:
+    name: MIT
+servers:
+  - url: https://backoffice-service-t57o3dxfca-nn.a.run.app
+    description: API
+  - url: https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app
+    description: ONBOARD
+  - url: https://backoffice-service-recs-t57o3dxfca-nn.a.run.app
+    description: RECS
+  - url: https://activity-service-978733420956.northamerica-northeast1.run.app
+    description: ACTIVITY
+security:
+  - bearerAuth: []
+tags:
+  - name: auth
+  - name: profile
+  - name: search
+  - name: business
+  - name: social
+  - name: ranking
+  - name: feed
+  - name: lists
+  - name: notifications
+  - name: reservations
+  - name: payments
+  - name: telemetry
+paths:
+  /api/token/:
+    post:
+      operationId: login
+      tags:
+        - auth
+      servers:
+        - url: https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      summary: Login (email or phone + password) — SimpleJWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '401':
+          description: invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/token/refresh/:
+    post:
+      operationId: refreshToken
+      tags:
+        - auth
+      servers:
+        - url: https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      summary: Refresh an access token — refresh token itself is not rotated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessToken'
+  /api/user/logged-in/:
+    get:
+      operationId: getLoggedIn
+      tags:
+        - auth
+      servers:
+        - url: https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      summary: Current user's full profile (incl. email, phone_no, home_city, referrer, sessions)
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user/u/{uuid}/:
+    put:
+      operationId: updateUser
+      tags:
+        - auth
+      security:
+        - bearerAuth: []
+      summary: Session heartbeat — sync FCM/live-activity tokens & session info; returns full user object
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fcm_token:
+                  type:
+                    - string
+                    - 'null'
+                live_activity_token:
+                  type:
+                    - string
+                    - 'null'
+                sessions: {}
+                last_login:
+                  type:
+                    - string
+                    - 'null'
+                  format: date-time
+                version:
+                  type:
+                    - string
+                    - 'null'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/device/{deviceId}/:
+    put:
+      operationId: updateDevice
+      tags:
+        - auth
+      security:
+        - bearerAuth: []
+      summary: Update device attribution record (AppsFlyer); request body not captured
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Body not captured in reference traffic (AppsFlyer attribution fields).
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/app-rank/{uuid}/:
+    get:
+      operationId: getAppRank
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: App-wide rank for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/check-user-settings/:
+    get:
+      operationId: getCheckUserSettings
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: Check user settings status
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/count-ranked-this-year/{uuid}/:
+    get:
+      operationId: getCountRankedThisYear
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: Count of places ranked by the user this year
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/creator-subscribe/:
+    get:
+      operationId: getCreatorSubscribe
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: Creator-subscribe status/config
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/datauserinteger/:
+    get:
+      operationId: getDatauserinteger
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: EAV integer-valued user fields (generic field layer, see reference §4)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/glassfy-config/:
+    get:
+      operationId: getGlassfyConfig
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: Glassfy (in-app-purchase) config
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/has-contacts/{uuid}/:
+    get:
+      operationId: getHasContacts
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: Whether the user has synced device contacts
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/invites-feature-progress/{uuid}/:
+    get:
+      operationId: getInvitesFeatureProgress
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: Invites feature progress for the user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/invites-remaining/{uuid}/:
+    get:
+      operationId: getInvitesRemaining
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: Remaining invites for the user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/number-params-before-user/:
+    get:
+      operationId: getNumberParamsBeforeUser
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: EAV numeric field definitions available before user context (see reference §4)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/number-params/{uuid}/:
+    get:
+      operationId: getNumberParams
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: EAV numeric field values for a user (see reference §4)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/profile-progress/{uuid}/:
+    get:
+      operationId: getProfileProgress
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: Onboarding/profile-completion progress for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/sharesheet-config/:
+    get:
+      operationId: getSharesheetConfig
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: Native share-sheet config
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/taste-profile-config/{uuid}/:
+    get:
+      operationId: getTasteProfileConfig
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: Taste-profile config for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/text-params-before-user/:
+    get:
+      operationId: getTextParamsBeforeUser
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: EAV text field definitions available before user context (see reference §4)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/text-params/{uuid}/:
+    get:
+      operationId: getTextParams
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: EAV text field values for a user (see reference §4)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/trigger/:
+    get:
+      operationId: getTrigger
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: In-app nudge/trigger config
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-setting/:
+    post:
+      operationId: createUserSetting
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: Write a user setting (EAV write) — `POST {user, field_name, value}`
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: string
+                  format: uuid
+                field_name:
+                  type: string
+                value: {}
+              required:
+                - user
+                - field_name
+                - value
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSetting'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+    get:
+      operationId: getUserSetting
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: Read user settings (EAV read)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: user
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user/bio/:
+    get:
+      operationId: getUserBio
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: A user's bio text
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user/member/:
+    get:
+      operationId: getUserMember
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: Membership/account info for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user/streak/:
+    get:
+      operationId: getUserStreak
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      summary: A user's ranking streak
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/all-cities/:
+    get:
+      operationId: getAllCities
+      tags:
+        - search
+      security:
+        - bearerAuth: []
+      summary: All cities Beli operates in (returned whole; no pagination observed)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/business-link/:
+    get:
+      operationId: getBusinessLink
+      tags:
+        - search
+      security:
+        - bearerAuth: []
+      summary: Resolve/build a shareable link for a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/business/:
+    get:
+      operationId: getBusiness
+      tags:
+        - search
+      security:
+        - bearerAuth: []
+      summary: Look up (get-or-create) a business by internal id or Google place_id
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: id
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: place_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: from_business_page
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResults'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/cuisine/all-cuisines/:
+    get:
+      operationId: getCuisineAllCuisines
+      tags:
+        - search
+      security:
+        - bearerAuth: []
+      summary: All cuisine tags known to the system
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/current-city/{uuid}/{coords}/:
+    get:
+      operationId: getCurrentCity
+      tags:
+        - search
+      security:
+        - bearerAuth: []
+      summary: Resolve the current city for a user from device coordinates
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: coords
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/filter-configs/:
+    get:
+      operationId: getFilterConfigs
+      tags:
+        - search
+      security:
+        - bearerAuth: []
+      summary: Available search/filter configuration (facets)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/filter-list/:
+    post:
+      operationId: createFilterList
+      tags:
+        - search
+      security:
+        - bearerAuth: []
+      summary: Filtered/trending business discovery query (list results)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                      value:
+                        type: array
+                        items:
+                          type: string
+                list_field:
+                  type: string
+                user:
+                  type: string
+                user2:
+                  type: string
+                category:
+                  type: string
+                bounds:
+                  type:
+                    - object
+                    - 'null'
+                sort_method:
+                  type: string
+                coords:
+                  type: string
+                ids:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/filter-options/:
+    post:
+      operationId: createFilterOptions
+      tags:
+        - search
+      security:
+        - bearerAuth: []
+      summary: Available filter option values for the discovery query builder; body shape not fully captured
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/popular-in-city/{uuid}/{city}/:
+    get:
+      operationId: getPopularInCity
+      tags:
+        - search
+      security:
+        - bearerAuth: []
+      summary: Popular businesses in a given city
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: city
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/published-list-cities/:
+    get:
+      operationId: getPublishedListCities
+      tags:
+        - search
+      security:
+        - bearerAuth: []
+      summary: Cities that have published lists/guides
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/search-app/:
+    get:
+      operationId: searchApp
+      tags:
+        - search
+      security:
+        - bearerAuth: []
+      summary: Primary in-app search (businesses, users, lists)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/top-cities/:
+    get:
+      operationId: getTopCities
+      tags:
+        - search
+      security:
+        - bearerAuth: []
+      summary: Top/featured cities
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/trending/{uuid}/:
+    get:
+      operationId: getTrending
+      tags:
+        - search
+      security:
+        - bearerAuth: []
+      summary: Trending businesses for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/bookmark-status/{uuid}/{id}/:
+    get:
+      operationId: getBookmarkStatus
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Whether a user has bookmarked a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/business-count-rated/{id}/:
+    get:
+      operationId: getBusinessCountRated
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Count of users who have rated a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/business-friend-text/{uuid}/{id}/:
+    get:
+      operationId: getBusinessFriendText
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Friend-activity summary text for a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/business-histogram-data/{id}/:
+    get:
+      operationId: getBusinessHistogramData
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Score-distribution histogram data for a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/business-labels/:
+    get:
+      operationId: getBusinessLabels
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Available business label/distinction types
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/closedatauserbusinessboolean/:
+    get:
+      operationId: getClosedatauserbusinessboolean
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: EAV boolean-valued user-business field(s) for closed/resolved state (see reference §4)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/countuserbusinessoccasion/{id}/:
+    get:
+      operationId: getCountuserbusinessoccasion
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Count of user-business occasion tags for a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/databusinessfloat-sparse/:
+    get:
+      operationId: getDatabusinessfloatSparse
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: EAV float-valued business fields, sparse layer (see reference §4)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/datauserbusinesstext-sparse/:
+    get:
+      operationId: getDatauserbusinesstextSparse
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: EAV text-valued user-business fields, sparse layer (see reference §4)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/dish-rec/:
+    get:
+      operationId: getDishRec
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Recommended dishes for a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/friends-bookmarked/{uuid}/{id}/:
+    get:
+      operationId: getFriendsBookmarked
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Friends who have bookmarked a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/rec-score/:
+    get:
+      operationId: getRecScore
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Recommendation score for a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/scores/{uuid}/{id}/:
+    get:
+      operationId: getScores
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: |
+        Friend scores for a user (reference §5: query filters are ignored server-side — fetch once and client-filter by business_id)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/static-maps-url/:
+    get:
+      operationId: getStaticMapsUrl
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Static map image URL for a business location
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/suggest-business-cuisine/:
+    get:
+      operationId: getSuggestBusinessCuisine
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Suggested cuisine tags for a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/suggest-business-price/:
+    get:
+      operationId: getSuggestBusinessPrice
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Suggested price tier for a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/tagged-users-on-business/{uuid}/{id}/:
+    get:
+      operationId: getTaggedUsersOnBusiness
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Users tagged in reviews of a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-business-labels/:
+    get:
+      operationId: getUserBusinessLabels
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: A user's labels/distinctions applied to businesses
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-business-photo/:
+    get:
+      operationId: getUserBusinessPhoto
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: A single user-business photo record (get-or-create semantics per Allow header)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-business-photos/:
+    get:
+      operationId: getUserBusinessPhotos
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: All photos for a user across businesses (returned whole; no pagination observed per reference §5)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/visit-dates-on-business/{uuid}/{id}/:
+    get:
+      operationId: getVisitDatesOnBusiness
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Dates a user visited a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/corr/{uuid1}/{uuid2}/:
+    get:
+      operationId: getCorr
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Correlation/affinity data between two users
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid1
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: uuid2
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/follow-count/{uuid}/followers/:
+    get:
+      operationId: getFollowCountFollowers
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Follower count for a user (bare integer per reference §8 FollowCount)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: integer
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/follow-count/{uuid}/following/:
+    get:
+      operationId: getFollowCountFollowing
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Following count for a user (bare integer per reference §8 FollowCount)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: integer
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/follow-requests/{uuid}/:
+    get:
+      operationId: getFollowRequests
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Pending follow requests for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/follow/:
+    get:
+      operationId: getFollow
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Existing-edge check between a follower and followed user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: follower
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: followed
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResults'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+    post:
+      operationId: createFollow
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Follow a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                follower:
+                  type: string
+                  format: uuid
+                followed:
+                  type: string
+                  format: uuid
+              required:
+                - follower
+                - followed
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowEdge'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/follow/{id}/:
+    put:
+      operationId: updateFollow
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Unfollow (set unfollow_dt on a follow edge)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                unfollow_dt:
+                  type: string
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowEdge'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/followers/{uuid}/:
+    get:
+      operationId: getFollowers
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: |
+        A user's followers (reference §2: known to intermittently 503 — treat as best-effort)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/following/{uuid}/:
+    get:
+      operationId: getFollowing
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Users a user is following
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/get-user-tag-suggestions/:
+    get:
+      operationId: getUserTagSuggestions
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Suggested users to tag (e.g. when writing a review)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/leaderboard/{uuid}/RANK/all_members/:
+    get:
+      operationId: getLeaderboard
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: RANK leaderboard among all members for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/mutual-bookmarks/{uuid1},{uuid2}/:
+    get:
+      operationId: getMutualBookmarks
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Businesses bookmarked by both users (comma-joined path segment per reference §7)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid1
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: uuid2
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/passed-user-corr/{uuid}/:
+    post:
+      operationId: createPassedUserCorr
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Batch affinity/correlation lookup for a list of users
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+                - ids
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/people-you-may-know-full/{uuid}/:
+    get:
+      operationId: getPeopleYouMayKnowFull
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Full "people you may know" suggestions for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/shared-meals/{uuid1}/{uuid2}/:
+    get:
+      operationId: getSharedMeals
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Meals/businesses shared between two users
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid1
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: uuid2
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/tagged-users/:
+    get:
+      operationId: getTaggedUsers
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Users tagged (generic, not scoped to a business)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-activity-subscriptions/{uuid1}/{uuid2}/:
+    get:
+      operationId: getUserActivitySubscriptions
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Activity-subscription state between two users
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid1
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: uuid2
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user/list/:
+    post:
+      operationId: createUserList
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Batch user hydration — resolve a list of user ids to full user objects
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+                - ids
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user/search/{uuid}/{query}/:
+    get:
+      operationId: getUserSearch
+      tags:
+        - social
+      security:
+        - bearerAuth: []
+      summary: Search for users by query string, scoped to a requesting user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: query
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Pagination unverified per reference §5.
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResults'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/add-ranking/:
+    post:
+      operationId: createRanking
+      tags:
+        - ranking
+      security:
+        - bearerAuth: []
+      summary: Create a rating/review (sentiment seed; Beli computes the displayed 0–10 score server-side)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddRankingRequest'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddRankingResponse'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/check-share-post-rank/:
+    post:
+      operationId: checkSharePostRank
+      tags:
+        - ranking
+      security:
+        - bearerAuth: []
+      summary: Third step of the rating-create sequence — post-rank share popups (value:null + share flags)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddRankingRequest'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/delete-ranking/{uuid}/{id}/:
+    put:
+      operationId: deleteRanking
+      tags:
+        - ranking
+      security:
+        - bearerAuth: []
+      summary: Soft-delete a rating/review (PUT with empty body)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/get-bookmark/:
+    get:
+      operationId: getBookmark
+      tags:
+        - ranking
+      security:
+        - bearerAuth: []
+      summary: A user's bookmarks
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/get-ranking/:
+    get:
+      operationId: getRanking
+      tags:
+        - ranking
+      security:
+        - bearerAuth: []
+      summary: |
+        A user's rankings for a category (reference §5: requires user+category, ignores business)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: user
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: category
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: business
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Ignored server-side per reference §5; included for completeness.
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/process-add-ranking/:
+    post:
+      operationId: processAddRanking
+      tags:
+        - ranking
+      security:
+        - bearerAuth: []
+      summary: Second step of the rating-create sequence — side effects (clear_playlists, unlocked_playlist_access)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddRankingRequest'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/score-average/{uuid}/ALL/:
+    get:
+      operationId: getScoreAverage
+      tags:
+        - ranking
+      security:
+        - bearerAuth: []
+      summary: Average score across all categories for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-field-count/{uuid}/BOOKMARKED/:
+    get:
+      operationId: getUserFieldCountBookmarked
+      tags:
+        - ranking
+      security:
+        - bearerAuth: []
+      summary: Count of a user's bookmarked-field records
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-field-count/{uuid}/RANK/:
+    get:
+      operationId: getUserFieldCountRank
+      tags:
+        - ranking
+      security:
+        - bearerAuth: []
+      summary: Count of a user's RANK-field records
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-rec-scores/:
+    post:
+      operationId: createUserRecScores
+      tags:
+        - ranking
+      security:
+        - bearerAuth: []
+      summary: Compute/refresh recommendation scores for a user; request body not captured
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-scores-cached/{uuid}/:
+    get:
+      operationId: getUserScoresCached
+      tags:
+        - ranking
+      security:
+        - bearerAuth: []
+      summary: Cached scores for a user (see reference §8 CachedScore)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-scores/{uuid}/:
+    get:
+      operationId: getUserScores
+      tags:
+        - ranking
+      security:
+        - bearerAuth: []
+      summary: Scores for a user (see reference §8 Score)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/data-user-business-text-new/:
+    post:
+      operationId: createDataUserBusinessText
+      tags:
+        - business
+      security:
+        - bearerAuth: []
+      summary: Write user-business text (e.g. NOTES/review text) via the EAV layer
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: string
+                  format: uuid
+                business:
+                  type: integer
+                field_name:
+                  type: string
+                value:
+                  type: string
+              required:
+                - user
+                - business
+                - field_name
+                - value
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/add-bookmark/:
+    post:
+      operationId: createBookmark
+      tags:
+        - ranking
+      x-beli-unverified: true
+      security:
+        - bearerAuth: []
+      summary: Bookmark a business (external source only — beli-mcp; not observed in our captures)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/remove-bookmark/:
+    put:
+      operationId: removeBookmark
+      tags:
+        - ranking
+      x-beli-unverified: true
+      security:
+        - bearerAuth: []
+      summary: Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/agg-following-new/{uuid}/:
+    get:
+      operationId: getAggFollowingNew
+      tags:
+        - feed
+      security:
+        - bearerAuth: []
+      summary: Aggregated "following" activity feed for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/feed-alert/{uuid}/:
+    get:
+      operationId: getFeedAlert
+      tags:
+        - feed
+      security:
+        - bearerAuth: []
+      summary: Feed alert/banner state for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/feed-item-data/:
+    get:
+      operationId: getFeedItemData
+      tags:
+        - feed
+      security:
+        - bearerAuth: []
+      summary: Feed item data (see reference §8 FeedItem)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/newsfeed-current/{uuid}/{id}/:
+    get:
+      operationId: getNewsfeedCurrent
+      tags:
+        - feed
+      security:
+        - bearerAuth: []
+      summary: Current newsfeed item for a user by id
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/newsfeed-data/{uuid}/:
+    get:
+      operationId: getNewsfeedData
+      tags:
+        - feed
+      security:
+        - bearerAuth: []
+      summary: Newsfeed data for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/newsfeed-reaction/{uuid}/:
+    get:
+      operationId: getNewsfeedReaction
+      tags:
+        - feed
+      security:
+        - bearerAuth: []
+      summary: Reactions on a newsfeed item
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/newsfeed-user/{uuid}/:
+    get:
+      operationId: getNewsfeedUser
+      tags:
+        - feed
+      security:
+        - bearerAuth: []
+      summary: Newsfeed scoped to a specific user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/profile-newsfeed-data/{uuid}/:
+    get:
+      operationId: getProfileNewsfeedData
+      tags:
+        - feed
+      security:
+        - bearerAuth: []
+      summary: Newsfeed data for a user's profile page
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/single-notification-data/{id}/:
+    get:
+      operationId: getSingleNotificationData
+      tags:
+        - feed
+      security:
+        - bearerAuth: []
+      summary: Data for a single notification/feed item by id
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/your-newsfeed-data/{uuid}/:
+    get:
+      operationId: getYourNewsfeedData
+      tags:
+        - feed
+      security:
+        - bearerAuth: []
+      summary: Newsfeed data for the your-feed tab
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/your-newsfeed-reaction/{uuid}/:
+    get:
+      operationId: getYourNewsfeedReaction
+      tags:
+        - feed
+      security:
+        - bearerAuth: []
+      summary: Reactions on your-feed newsfeed items
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/challenge-join-config/:
+    get:
+      operationId: getChallengeJoinConfig
+      tags:
+        - lists
+      security:
+        - bearerAuth: []
+      summary: Config for joining a challenge
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/challenge-progress-share/{uuid}/:
+    post:
+      operationId: createChallengeProgressShare
+      tags:
+        - lists
+      security:
+        - bearerAuth: []
+      summary: Share a user's challenge progress; request body not captured
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Body not captured in reference traffic.
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/my-featured-list-challenges/{uuid}/:
+    get:
+      operationId: getMyFeaturedListChallenges
+      tags:
+        - lists
+      security:
+        - bearerAuth: []
+      summary: A user's featured list challenges (see reference §8 PublishedList.challenge_info)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/playlists/:
+    get:
+      operationId: getPlaylists
+      tags:
+        - lists
+      security:
+        - bearerAuth: []
+      summary: Playlists available to the user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/published-list-item-new/:
+    get:
+      operationId: getPublishedListItemNew
+      tags:
+        - lists
+      security:
+        - bearerAuth: []
+      summary: Items on a published list/guide
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/published-list/:
+    get:
+      operationId: getPublishedList
+      tags:
+        - lists
+      security:
+        - bearerAuth: []
+      summary: Published lists/guides (see reference §8 PublishedList)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/published-list/{uuid}/:
+    get:
+      operationId: getPublishedListByUser
+      tags:
+        - lists
+      security:
+        - bearerAuth: []
+      summary: Published lists/guides authored by a specific user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/short-list/{uuid}/:
+    get:
+      operationId: getShortList
+      tags:
+        - lists
+      security:
+        - bearerAuth: []
+      summary: A user's short list (condensed guide/wishlist)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-guide-items-close/:
+    get:
+      operationId: getUserGuideItemsClose
+      tags:
+        - lists
+      security:
+        - bearerAuth: []
+      summary: Closed/resolved user-guide items
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-guide-items/:
+    get:
+      operationId: getUserGuideItems
+      tags:
+        - lists
+      security:
+        - bearerAuth: []
+      summary: Items on a user's guide
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-guide/:
+    get:
+      operationId: getUserGuide
+      tags:
+        - lists
+      security:
+        - bearerAuth: []
+      summary: A user's guide(s)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/user-hscroll-lists/placement/:
+    post:
+      operationId: createUserHscrollListsPlacement
+      tags:
+        - lists
+      security:
+        - bearerAuth: []
+      summary: Record placement of horizontal-scroll list modules shown to a user; request body not captured
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Body not captured in reference traffic.
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/app-notification/{uuid}/:
+    get:
+      operationId: getAppNotification
+      tags:
+        - notifications
+      security:
+        - bearerAuth: []
+      summary: In-app notifications for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/banner-notification/{uuid}/:
+    get:
+      operationId: getBannerNotification
+      tags:
+        - notifications
+      security:
+        - bearerAuth: []
+      summary: Banner notification state for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/blocked-me/{uuid}/:
+    get:
+      operationId: getBlockedMe
+      tags:
+        - notifications
+      security:
+        - bearerAuth: []
+      summary: Users who have blocked this user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/blocked/{uuid}/:
+    get:
+      operationId: getBlocked
+      tags:
+        - notifications
+      security:
+        - bearerAuth: []
+      summary: Users blocked by this user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/count-app-notification-unread/:
+    get:
+      operationId: getCountAppNotificationUnread
+      tags:
+        - notifications
+      security:
+        - bearerAuth: []
+      summary: Count of unread in-app notifications
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/mark-read/{uuid}/:
+    get:
+      operationId: getMarkRead
+      tags:
+        - notifications
+      security:
+        - bearerAuth: []
+      summary: Mark a user's notifications as read (observed as a GET request)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/muted/{uuid}/:
+    get:
+      operationId: getMuted
+      tags:
+        - notifications
+      security:
+        - bearerAuth: []
+      summary: Users muted by this user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/notification-comment-count/{id}/:
+    get:
+      operationId: getNotificationCommentCount
+      tags:
+        - notifications
+      security:
+        - bearerAuth: []
+      summary: Comment count on a notification/feed item
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/notification-reaction/:
+    get:
+      operationId: getNotificationReaction
+      tags:
+        - notifications
+      security:
+        - bearerAuth: []
+      summary: Reactions on notifications
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/notification/{id}/:
+    put:
+      operationId: updateNotification
+      tags:
+        - notifications
+      security:
+        - bearerAuth: []
+      summary: Update a notification (e.g. mark read/dismissed); request body not fully captured
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Body not captured in reference traffic.
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/popup/{uuid}/:
+    get:
+      operationId: getPopup
+      tags:
+        - notifications
+      security:
+        - bearerAuth: []
+      summary: In-app popup(s) queued for a user
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/available-reservations/{uuid}/:
+    get:
+      operationId: getAvailableReservations
+      tags:
+        - reservations
+      security:
+        - bearerAuth: []
+      summary: Available reservation slots for a business
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/business-res-booked-list/:
+    get:
+      operationId: getBusinessResBookedList
+      tags:
+        - reservations
+      security:
+        - bearerAuth: []
+      summary: Businesses with booked reservations
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/businesses-res-availability/:
+    post:
+      operationId: createBusinessesResAvailability
+      tags:
+        - reservations
+      security:
+        - bearerAuth: []
+      summary: |
+        Reservation availability for one or more businesses (response keyed by composite string per reference §5/§8 ReservationOffer)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                business_ids:
+                  type: array
+                  items:
+                    type: integer
+                date:
+                  type: string
+                  format: date
+                table_size:
+                  type: integer
+                time:
+                  type: string
+                use_now:
+                  type: boolean
+                local_dt:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/res-priority-data/:
+    get:
+      operationId: getResPriorityData
+      tags:
+        - reservations
+      security:
+        - bearerAuth: []
+      summary: A user's reservation priority data
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/res-report-issue-options/:
+    get:
+      operationId: getResReportIssueOptions
+      tags:
+        - reservations
+      security:
+        - bearerAuth: []
+      summary: Options for reporting a reservation issue
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/reservation-posting/:
+    get:
+      operationId: getReservationPosting
+      tags:
+        - reservations
+      security:
+        - bearerAuth: []
+      summary: Reservation posting(s) (see reference §8 ReservationOffer)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/reservations-claimed-today/:
+    get:
+      operationId: getReservationsClaimedToday
+      tags:
+        - reservations
+      security:
+        - bearerAuth: []
+      summary: Reservations claimed today
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/apple-maps-token/:
+    get:
+      operationId: getAppleMapsToken
+      tags:
+        - payments
+      security:
+        - bearerAuth: []
+      summary: Apple Maps access token for embedded maps
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/stripe-payment-methods/:
+    get:
+      operationId: getStripePaymentMethods
+      tags:
+        - payments
+      security:
+        - bearerAuth: []
+      summary: A user's saved Stripe payment methods
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsEnvelope'
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/activity/:
+    post:
+      operationId: createActivity
+      tags:
+        - telemetry
+      servers:
+        - url: https://activity-service-978733420956.northamerica-northeast1.run.app
+      security:
+        - bearerAuth: []
+      summary: |
+        Fire-and-forget analytics event sink. Reference §7 lists this path on both the ACTIVITY host (row 136) and the ONBOARD host (row 135, observed during login, H3-login) — OpenAPI paths are host-agnostic and cannot be duplicated, so this single operation is modeled on the ACTIVITY host; it is also accepted on https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app during login.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+  /api/api-error/:
+    post:
+      operationId: createApiError
+      tags:
+        - telemetry
+      servers:
+        - url: https://activity-service-978733420956.northamerica-northeast1.run.app
+      security:
+        - bearerAuth: []
+      summary: Fire-and-forget client-error reporting sink
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+        full_name:
+          type: string
+        username:
+          type: string
+        created_dt:
+          type: string
+          format: date-time
+        instagram_url:
+          type:
+            - string
+            - 'null'
+        tiktok_url:
+          type:
+            - string
+            - 'null'
+        photo:
+          type:
+            - string
+            - 'null'
+        profile_photo:
+          type:
+            - string
+            - 'null'
+        public:
+          type: boolean
+        school:
+          type:
+            - string
+            - 'null'
+        company:
+          type:
+            - string
+            - 'null'
+        has_supper_club:
+          type: boolean
+        has_vip:
+          type: boolean
+        is_playlist_eligible:
+          type: boolean
+      required:
+        - id
+        - username
+    UserExtended:
+      description: |
+        Extended profile shape returned by self/detail endpoints (adds contact + onboarding fields on top of the base User shape).
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            phone_no:
+              type:
+                - string
+                - 'null'
+            email:
+              type:
+                - string
+                - 'null'
+            home_city:
+              type:
+                - string
+                - 'null'
+            bio:
+              type:
+                - string
+                - 'null'
+            referrer: {}
+            referral_link:
+              type:
+                - string
+                - 'null'
+            sessions: {}
+            reservation_priority: {}
+            qr_code:
+              type:
+                - string
+                - 'null'
+            following:
+              type:
+                - boolean
+                - 'null'
+              description: Present (bool) only in search-result contexts.
+    Business:
+      type: object
+      properties:
+        id:
+          type: integer
+        place_id:
+          type:
+            - string
+            - 'null'
+        name:
+          type: string
+        status:
+          type: string
+        city:
+          type:
+            - string
+            - 'null'
+        borough:
+          type:
+            - string
+            - 'null'
+        lat:
+          type: number
+        lng:
+          type: number
+        price:
+          type:
+            - integer
+            - 'null'
+        price_key:
+          type:
+            - string
+            - 'null'
+        neighborhood:
+          type:
+            - string
+            - 'null'
+        country:
+          type:
+            - string
+            - 'null'
+        website:
+          type:
+            - string
+            - 'null'
+        phone_number:
+          type:
+            - string
+            - 'null'
+        cuisines:
+          type: array
+          items:
+            type: string
+        default_category:
+          type:
+            - string
+            - 'null'
+        quick_link:
+          type:
+            - string
+            - 'null'
+        tz:
+          type:
+            - string
+            - 'null'
+        has_cover_photo:
+          type: boolean
+        has_res_links:
+          type: boolean
+        has_delivery_links:
+          type: boolean
+        has_no_show_fee:
+          type: boolean
+        reservation_venue_id:
+          type:
+            - integer
+            - 'null'
+        businesshours_set:
+          type: array
+          items:
+            $ref: '#/components/schemas/BusinessHours'
+        businessdistinction_set:
+          type: array
+          items:
+            type: object
+          description: Shape not pinned down by reference §8.
+        businessHoursConfig:
+          type: object
+          description: Shape not pinned down by reference §8.
+      required:
+        - id
+        - name
+    BusinessHours:
+      type: object
+      properties:
+        open_day:
+          type: integer
+        close_day:
+          type: integer
+        open_time:
+          type: string
+        close_time:
+          type: string
+    Score:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        business_id:
+          type: integer
+        value:
+          type: number
+        category:
+          type: string
+        num_visits:
+          type:
+            - integer
+            - 'null'
+        notification_id:
+          type:
+            - integer
+            - 'null'
+        sent_dt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+    CachedScore:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        business_id:
+          type: integer
+        value:
+          type: number
+        category:
+          type: string
+        labels:
+          type: array
+          items:
+            type: string
+    Photo:
+      type: object
+      properties:
+        id:
+          type: integer
+        image:
+          type: string
+        thumbnail:
+          type:
+            - string
+            - 'null'
+        bb_image:
+          type:
+            - string
+            - 'null'
+        bb_thumbnail:
+          type:
+            - string
+            - 'null'
+        description:
+          type:
+            - string
+            - 'null'
+        order:
+          type: integer
+        favorite_dish:
+          type:
+            - string
+            - 'null'
+        created_dt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        likes:
+          type: array
+          items:
+            type: string
+            format: uuid
+        user:
+          type: string
+          format: uuid
+        business:
+          type: integer
+      required:
+        - id
+    PublishedList:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type:
+            - string
+            - 'null'
+        cover_photo: {}
+        ranked:
+          type: boolean
+        category:
+          type:
+            - string
+            - 'null'
+        quick_link:
+          type:
+            - string
+            - 'null'
+        challenge_info:
+          type:
+            - object
+            - 'null'
+          properties:
+            is_joined:
+              type: boolean
+            progress:
+              type: number
+            total:
+              type: number
+            participant_count:
+              type: integer
+        status:
+          type: string
+      required:
+        - id
+        - title
+    FeedItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        event_type:
+          type: string
+          description: e.g. ADD, BOOKMARK, … (not exhaustively observed)
+        sent_dt:
+          type: string
+          format: date-time
+        user1:
+          type: string
+          format: uuid
+        title:
+          type:
+            - string
+            - 'null'
+        body:
+          type:
+            - string
+            - 'null'
+        business:
+          type: integer
+        category:
+          type:
+            - string
+            - 'null'
+        score:
+          type:
+            - number
+            - 'null'
+        num_visits:
+          type:
+            - integer
+            - 'null'
+        business_full:
+          $ref: '#/components/schemas/Business'
+      required:
+        - id
+    FollowEdge:
+      type: object
+      properties:
+        id:
+          type: integer
+        request_dt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        accept_dt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        unfollow_dt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        unaccept_dt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        follower:
+          type: string
+          format: uuid
+        followed:
+          type: string
+          format: uuid
+      required:
+        - id
+        - status
+    ReservationOffer:
+      type: object
+      description: |
+        Slot metadata and availability keys vary by query/platform; treat as a partial contract beyond the fields listed here.
+      properties:
+        id:
+          type: integer
+        user:
+          $ref: '#/components/schemas/User'
+        business:
+          $ref: '#/components/schemas/Business'
+        reservation_platforms:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              name:
+                type: string
+                enum:
+                  - OPENTABLE
+                  - SEVENROOMS
+    Field:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        display:
+          type:
+            - string
+            - 'null'
+        table:
+          type:
+            - string
+            - 'null'
+        category:
+          type:
+            - string
+            - 'null'
+        is_filter:
+          type: boolean
+      required:
+        - id
+        - name
+    UserSetting:
+      type: object
+      properties:
+        user:
+          type: string
+          format: uuid
+        field:
+          $ref: '#/components/schemas/Field'
+        value: {}
+        start_dt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        end_dt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+    TokenPair:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+      required:
+        - access
+        - refresh
+    AccessToken:
+      type: object
+      properties:
+        access:
+          type: string
+      required:
+        - access
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        phone_no:
+          type: string
+        password:
+          type: string
+      required:
+        - password
+    RefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+      required:
+        - refresh
+    ErrorDetail:
+      type: object
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+    ResultsEnvelope:
+      type: object
+      properties:
+        results:
+          type: array
+          items: {}
+    PaginatedResults:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type:
+            - string
+            - 'null'
+        previous:
+          type:
+            - string
+            - 'null'
+        results:
+          type: array
+          items: {}
+    AddRankingRequest:
+      type: object
+      properties:
+        category:
+          type: string
+        user_id:
+          type: string
+          format: uuid
+        business_id:
+          type: integer
+        value:
+          type:
+            - number
+            - 'null'
+        tagged_users:
+          type: array
+          items:
+            type: string
+            format: uuid
+        local_datetime:
+          type: string
+          format: date-time
+        utc_offset:
+          type: integer
+        visit_dates:
+          type: array
+          items:
+            type: string
+            format: date
+        visit_date_on_rank:
+          type:
+            - string
+            - 'null'
+          format: date
+        rank_button_source:
+          type:
+            - string
+            - 'null'
+        overall_rank_count:
+          type: integer
+        version_supports_multi_category:
+          type: boolean
+        has_access_multi_category:
+          type: boolean
+        supports_featured_list_challenges:
+          type: boolean
+      required:
+        - category
+        - user_id
+        - business_id
+    AddRankingResponse:
+      type: object
+      properties:
+        results:
+          type: object
+        feed_item_id:
+          type:
+            - integer
+            - 'null'
+        score:
+          type:
+            - number
+            - 'null'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    OriginHeader:
+      name: Origin
+      in: header
+      required: true
+      schema:
+        type: string
+        default: https://localhost
+      description: Required by the backend; requests without an Origin header receive 403.

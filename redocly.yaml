@@ -1,0 +1,2 @@
+apis:
+  main: { root: openapi/beli.yaml }

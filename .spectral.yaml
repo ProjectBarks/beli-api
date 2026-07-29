@@ -3,3 +3,4 @@ rules:
   operation-operationId: error
   operation-tags: error
   oas3-unused-component: off
+  path-keys-no-trailing-slash: off
