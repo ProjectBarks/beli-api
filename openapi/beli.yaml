@@ -357,6 +357,411 @@ paths:
       responses:
         "200": { description: ok, content: { application/json: { schema: { type: object } } } }
         "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/all-cities/:
+    get:
+      operationId: getAllCities
+      tags: [search]
+      security: [{ bearerAuth: [] }]
+      summary: All cities Beli operates in (returned whole; no pagination observed)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/business-link/:
+    get:
+      operationId: getBusinessLink
+      tags: [search]
+      security: [{ bearerAuth: [] }]
+      summary: Resolve/build a shareable link for a business
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/business/:
+    get:
+      operationId: getBusiness
+      tags: [search]
+      security: [{ bearerAuth: [] }]
+      summary: Look up (get-or-create) a business by internal id or Google place_id
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: id, in: query, required: false, schema: { type: integer } }
+        - { name: place_id, in: query, required: false, schema: { type: string } }
+        - { name: from_business_page, in: query, required: false, schema: { type: boolean } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/PaginatedResults" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/cuisine/all-cuisines/:
+    get:
+      operationId: getCuisineAllCuisines
+      tags: [search]
+      security: [{ bearerAuth: [] }]
+      summary: All cuisine tags known to the system
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/current-city/{uuid}/{coords}/:
+    get:
+      operationId: getCurrentCity
+      tags: [search]
+      security: [{ bearerAuth: [] }]
+      summary: Resolve the current city for a user from device coordinates
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: coords, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/filter-configs/:
+    get:
+      operationId: getFilterConfigs
+      tags: [search]
+      security: [{ bearerAuth: [] }]
+      summary: Available search/filter configuration (facets)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/filter-list/:
+    post:
+      operationId: createFilterList
+      tags: [search]
+      security: [{ bearerAuth: [] }]
+      summary: Filtered/trending business discovery query (list results)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      key: { type: string }
+                      value: { type: array, items: { type: string } }
+                list_field: { type: string }
+                user: { type: string }
+                user2: { type: string }
+                category: { type: string }
+                bounds: { type: [object, "null"] }
+                sort_method: { type: string }
+                coords: { type: string }
+                ids: { type: array, items: { type: integer } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/filter-options/:
+    post:
+      operationId: createFilterOptions
+      tags: [search]
+      security: [{ bearerAuth: [] }]
+      summary: Available filter option values for the discovery query builder; body shape not fully captured
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/popular-in-city/{uuid}/{city}/:
+    get:
+      operationId: getPopularInCity
+      tags: [search]
+      security: [{ bearerAuth: [] }]
+      summary: Popular businesses in a given city
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: city, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/published-list-cities/:
+    get:
+      operationId: getPublishedListCities
+      tags: [search]
+      security: [{ bearerAuth: [] }]
+      summary: Cities that have published lists/guides
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/search-app/:
+    get:
+      operationId: searchApp
+      tags: [search]
+      security: [{ bearerAuth: [] }]
+      summary: Primary in-app search (businesses, users, lists)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/top-cities/:
+    get:
+      operationId: getTopCities
+      tags: [search]
+      security: [{ bearerAuth: [] }]
+      summary: Top/featured cities
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/trending/{uuid}/:
+    get:
+      operationId: getTrending
+      tags: [search]
+      security: [{ bearerAuth: [] }]
+      summary: Trending businesses for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/bookmark-status/{uuid}/{id}/:
+    get:
+      operationId: getBookmarkStatus
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Whether a user has bookmarked a business
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/business-count-rated/{id}/:
+    get:
+      operationId: getBusinessCountRated
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Count of users who have rated a business
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/business-friend-text/{uuid}/{id}/:
+    get:
+      operationId: getBusinessFriendText
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Friend-activity summary text for a business
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/business-histogram-data/{id}/:
+    get:
+      operationId: getBusinessHistogramData
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Score-distribution histogram data for a business
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/business-labels/:
+    get:
+      operationId: getBusinessLabels
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Available business label/distinction types
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/closedatauserbusinessboolean/:
+    get:
+      operationId: getClosedatauserbusinessboolean
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: EAV boolean-valued user-business field(s) for closed/resolved state (see reference §4)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/countuserbusinessoccasion/{id}/:
+    get:
+      operationId: getCountuserbusinessoccasion
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Count of user-business occasion tags for a business
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/databusinessfloat-sparse/:
+    get:
+      operationId: getDatabusinessfloatSparse
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: EAV float-valued business fields, sparse layer (see reference §4)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/datauserbusinesstext-sparse/:
+    get:
+      operationId: getDatauserbusinesstextSparse
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: EAV text-valued user-business fields, sparse layer (see reference §4)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/dish-rec/:
+    get:
+      operationId: getDishRec
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Recommended dishes for a business
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/friends-bookmarked/{uuid}/{id}/:
+    get:
+      operationId: getFriendsBookmarked
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Friends who have bookmarked a business
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/rec-score/:
+    get:
+      operationId: getRecScore
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Recommendation score for a business
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/scores/{uuid}/{id}/:
+    get:
+      operationId: getScores
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: >
+        Friend scores for a user (reference §5: query filters are ignored server-side —
+        fetch once and client-filter by business_id)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/static-maps-url/:
+    get:
+      operationId: getStaticMapsUrl
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Static map image URL for a business location
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/suggest-business-cuisine/:
+    get:
+      operationId: getSuggestBusinessCuisine
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Suggested cuisine tags for a business
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/suggest-business-price/:
+    get:
+      operationId: getSuggestBusinessPrice
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Suggested price tier for a business
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/tagged-users-on-business/{uuid}/{id}/:
+    get:
+      operationId: getTaggedUsersOnBusiness
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Users tagged in reviews of a business
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-business-labels/:
+    get:
+      operationId: getUserBusinessLabels
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: A user's labels/distinctions applied to businesses
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-business-photo/:
+    get:
+      operationId: getUserBusinessPhoto
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: A single user-business photo record (get-or-create semantics per Allow header)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-business-photos/:
+    get:
+      operationId: getUserBusinessPhotos
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: All photos for a user across businesses (returned whole; no pagination observed per reference §5)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/visit-dates-on-business/{uuid}/{id}/:
+    get:
+      operationId: getVisitDatesOnBusiness
+      tags: [business]
+      security: [{ bearerAuth: [] }]
+      summary: Dates a user visited a business
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
 components:
   schemas:
     User:
