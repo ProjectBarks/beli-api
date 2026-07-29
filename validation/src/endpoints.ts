@@ -12,6 +12,15 @@
 //
 // `Ctx` is defined here (not imported from ./runner) so this module has no dependency on
 // Task 13's runner.ts. Task 13 should import `Ctx` FROM this module instead.
+//
+// The `revert` closures below invoke the generated SDK's flat, operationId-named exports
+// directly (the same package Task 13's runner.ts dogfoods — see
+// `sdks/typescript/src/sdk.gen.ts`), NOT a namespaced `ctx.sdk.<group>.<fn>()` shape (the
+// package has no such namespacing). `Ctx.sdk` is the bearer-authenticated `Client` instance
+// (built by `makeAuthedClient` in runner.ts), passed as the `client` option on each call —
+// exactly as `runner.ts#runOps` does for reads.
+import { updateFollow, deleteRanking, removeBookmark } from "beli-api-ts";
+
 export type Ctx = {
   /** Bearer-authenticated SDK client for the logged-in test account. */
   sdk: any;
@@ -109,8 +118,17 @@ export const DESCRIPTORS: Record<string, Descriptor> = {
   createFollow: {
     kind: "write-reversible",
     args: (c) => ({ follower: c.userId, followed: c.testTargetUser }),
+    // `res` is the unwrapped `FollowEdge` returned by createFollow (i.e. the caller's
+    // `{ data }`, not the whole `{ data, error, response }` RequestResult) — `res.id` is the
+    // new follow-edge's numeric id, required by PUT /api/follow/{id}/.
     revert: async (c, res) => {
-      await c.sdk.social.updateFollow(res.id, { unfollow_dt: new Date().toISOString() });
+      await updateFollow({
+        client: c.sdk,
+        path: { id: res.id },
+        body: { unfollow_dt: new Date().toISOString() },
+        headers: { Origin: "https://localhost" },
+        throwOnError: false,
+      });
     },
   },
   // Revert-half of createFollow above; invoked via the closure, not live-tested standalone.
@@ -136,8 +154,15 @@ export const DESCRIPTORS: Record<string, Descriptor> = {
       user_id: c.userId,
       business_id: c.testTargetBusiness,
     }),
+    // `res` is the unwrapped `AddRankingResponse` returned by createRanking. `results` is
+    // `x-beli-unverified` (typed as `{[key: string]: unknown}`), so `id` is read defensively.
     revert: async (c, res) => {
-      await c.sdk.ranking.deleteRanking(c.userId, res.results.id);
+      await deleteRanking({
+        client: c.sdk,
+        path: { uuid: c.userId, id: (res.results as Record<string, any>).id },
+        headers: { Origin: "https://localhost" },
+        throwOnError: false,
+      });
     },
   },
   checkSharePostRank: { kind: "write-mock" },
@@ -155,8 +180,17 @@ export const DESCRIPTORS: Record<string, Descriptor> = {
   createBookmark: {
     kind: "write-reversible",
     args: (c) => ({ user: c.userId, business: c.testTargetBusiness, category: "RES" }),
+    // Both createBookmark's and removeBookmark's request/response bodies are
+    // `x-beli-unverified` in the spec (typed as `{[key: string]: unknown}`) — the revert
+    // doesn't depend on the create response shape at all, it just re-sends the same
+    // user/business identity that add-bookmark used.
     revert: async (c) => {
-      await c.sdk.ranking.removeBookmark({ user: c.userId, business: c.testTargetBusiness });
+      await removeBookmark({
+        client: c.sdk,
+        body: { user: c.userId, business: c.testTargetBusiness },
+        headers: { Origin: "https://localhost" },
+        throwOnError: false,
+      });
     },
   },
   // Revert-half of createBookmark above; invoked via the closure, not live-tested standalone.
