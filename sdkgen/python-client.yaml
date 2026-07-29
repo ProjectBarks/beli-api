@@ -1,0 +1,4 @@
+# openapi-python-client config; prefer Pydantic v2 models
+use_path_prefixes_for_title_model_names: false
+project_name_override: "beli_api"
+package_name_override: "beli_api"

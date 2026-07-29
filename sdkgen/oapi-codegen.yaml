@@ -1,0 +1,7 @@
+package: beliapi
+output: ./sdks/go/beliapi.gen.go
+generate:
+  models: true
+  client: true      # ClientWithResponses; RequestEditorFn injects Origin + bearer (Task 13-parity)
+output-options:
+  skip-prune: false
