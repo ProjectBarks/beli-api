@@ -1230,6 +1230,554 @@ paths:
       responses:
         "200": { description: ok, content: { application/json: { schema: { type: object } } } }
         "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/agg-following-new/{uuid}/:
+    get:
+      operationId: getAggFollowingNew
+      tags: [feed]
+      security: [{ bearerAuth: [] }]
+      summary: Aggregated "following" activity feed for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/feed-alert/{uuid}/:
+    get:
+      operationId: getFeedAlert
+      tags: [feed]
+      security: [{ bearerAuth: [] }]
+      summary: Feed alert/banner state for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/feed-item-data/:
+    get:
+      operationId: getFeedItemData
+      tags: [feed]
+      security: [{ bearerAuth: [] }]
+      summary: Feed item data (see reference §8 FeedItem)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/newsfeed-current/{uuid}/{id}/:
+    get:
+      operationId: getNewsfeedCurrent
+      tags: [feed]
+      security: [{ bearerAuth: [] }]
+      summary: Current newsfeed item for a user by id
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/newsfeed-data/{uuid}/:
+    get:
+      operationId: getNewsfeedData
+      tags: [feed]
+      security: [{ bearerAuth: [] }]
+      summary: Newsfeed data for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/newsfeed-reaction/{uuid}/:
+    get:
+      operationId: getNewsfeedReaction
+      tags: [feed]
+      security: [{ bearerAuth: [] }]
+      summary: Reactions on a newsfeed item
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/newsfeed-user/{uuid}/:
+    get:
+      operationId: getNewsfeedUser
+      tags: [feed]
+      security: [{ bearerAuth: [] }]
+      summary: Newsfeed scoped to a specific user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/profile-newsfeed-data/{uuid}/:
+    get:
+      operationId: getProfileNewsfeedData
+      tags: [feed]
+      security: [{ bearerAuth: [] }]
+      summary: Newsfeed data for a user's profile page
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/single-notification-data/{id}/:
+    get:
+      operationId: getSingleNotificationData
+      tags: [feed]
+      security: [{ bearerAuth: [] }]
+      summary: Data for a single notification/feed item by id
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/your-newsfeed-data/{uuid}/:
+    get:
+      operationId: getYourNewsfeedData
+      tags: [feed]
+      security: [{ bearerAuth: [] }]
+      summary: Newsfeed data for the your-feed tab
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/your-newsfeed-reaction/{uuid}/:
+    get:
+      operationId: getYourNewsfeedReaction
+      tags: [feed]
+      security: [{ bearerAuth: [] }]
+      summary: Reactions on your-feed newsfeed items
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/challenge-join-config/:
+    get:
+      operationId: getChallengeJoinConfig
+      tags: [lists]
+      security: [{ bearerAuth: [] }]
+      summary: Config for joining a challenge
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/challenge-progress-share/{uuid}/:
+    post:
+      operationId: createChallengeProgressShare
+      tags: [lists]
+      security: [{ bearerAuth: [] }]
+      summary: Share a user's challenge progress; request body not captured
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Body not captured in reference traffic.
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/my-featured-list-challenges/{uuid}/:
+    get:
+      operationId: getMyFeaturedListChallenges
+      tags: [lists]
+      security: [{ bearerAuth: [] }]
+      summary: A user's featured list challenges (see reference §8 PublishedList.challenge_info)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/playlists/:
+    get:
+      operationId: getPlaylists
+      tags: [lists]
+      security: [{ bearerAuth: [] }]
+      summary: Playlists available to the user
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/published-list-item-new/:
+    get:
+      operationId: getPublishedListItemNew
+      tags: [lists]
+      security: [{ bearerAuth: [] }]
+      summary: Items on a published list/guide
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/published-list/:
+    get:
+      operationId: getPublishedList
+      tags: [lists]
+      security: [{ bearerAuth: [] }]
+      summary: Published lists/guides (see reference §8 PublishedList)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/published-list/{uuid}/:
+    get:
+      operationId: getPublishedListByUser
+      tags: [lists]
+      security: [{ bearerAuth: [] }]
+      summary: Published lists/guides authored by a specific user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/short-list/{uuid}/:
+    get:
+      operationId: getShortList
+      tags: [lists]
+      security: [{ bearerAuth: [] }]
+      summary: A user's short list (condensed guide/wishlist)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-guide-items-close/:
+    get:
+      operationId: getUserGuideItemsClose
+      tags: [lists]
+      security: [{ bearerAuth: [] }]
+      summary: Closed/resolved user-guide items
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-guide-items/:
+    get:
+      operationId: getUserGuideItems
+      tags: [lists]
+      security: [{ bearerAuth: [] }]
+      summary: Items on a user's guide
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-guide/:
+    get:
+      operationId: getUserGuide
+      tags: [lists]
+      security: [{ bearerAuth: [] }]
+      summary: A user's guide(s)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/user-hscroll-lists/placement/:
+    post:
+      operationId: createUserHscrollListsPlacement
+      tags: [lists]
+      security: [{ bearerAuth: [] }]
+      summary: Record placement of horizontal-scroll list modules shown to a user; request body not captured
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Body not captured in reference traffic.
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/app-notification/{uuid}/:
+    get:
+      operationId: getAppNotification
+      tags: [notifications]
+      security: [{ bearerAuth: [] }]
+      summary: In-app notifications for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/banner-notification/{uuid}/:
+    get:
+      operationId: getBannerNotification
+      tags: [notifications]
+      security: [{ bearerAuth: [] }]
+      summary: Banner notification state for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/blocked-me/{uuid}/:
+    get:
+      operationId: getBlockedMe
+      tags: [notifications]
+      security: [{ bearerAuth: [] }]
+      summary: Users who have blocked this user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/blocked/{uuid}/:
+    get:
+      operationId: getBlocked
+      tags: [notifications]
+      security: [{ bearerAuth: [] }]
+      summary: Users blocked by this user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/count-app-notification-unread/:
+    get:
+      operationId: getCountAppNotificationUnread
+      tags: [notifications]
+      security: [{ bearerAuth: [] }]
+      summary: Count of unread in-app notifications
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/mark-read/{uuid}/:
+    get:
+      operationId: getMarkRead
+      tags: [notifications]
+      security: [{ bearerAuth: [] }]
+      summary: Mark a user's notifications as read (observed as a GET request)
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/muted/{uuid}/:
+    get:
+      operationId: getMuted
+      tags: [notifications]
+      security: [{ bearerAuth: [] }]
+      summary: Users muted by this user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/notification-comment-count/{id}/:
+    get:
+      operationId: getNotificationCommentCount
+      tags: [notifications]
+      security: [{ bearerAuth: [] }]
+      summary: Comment count on a notification/feed item
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/notification-reaction/:
+    get:
+      operationId: getNotificationReaction
+      tags: [notifications]
+      security: [{ bearerAuth: [] }]
+      summary: Reactions on notifications
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/notification/{id}/:
+    put:
+      operationId: updateNotification
+      tags: [notifications]
+      security: [{ bearerAuth: [] }]
+      summary: Update a notification (e.g. mark read/dismissed); request body not fully captured
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Body not captured in reference traffic.
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/popup/{uuid}/:
+    get:
+      operationId: getPopup
+      tags: [notifications]
+      security: [{ bearerAuth: [] }]
+      summary: In-app popup(s) queued for a user
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/available-reservations/{uuid}/:
+    get:
+      operationId: getAvailableReservations
+      tags: [reservations]
+      security: [{ bearerAuth: [] }]
+      summary: Available reservation slots for a business
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/business-res-booked-list/:
+    get:
+      operationId: getBusinessResBookedList
+      tags: [reservations]
+      security: [{ bearerAuth: [] }]
+      summary: Businesses with booked reservations
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/businesses-res-availability/:
+    post:
+      operationId: createBusinessesResAvailability
+      tags: [reservations]
+      security: [{ bearerAuth: [] }]
+      summary: >
+        Reservation availability for one or more businesses (response keyed by
+        composite string per reference §5/§8 ReservationOffer)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                business_ids: { type: array, items: { type: integer } }
+                date: { type: string, format: date }
+                table_size: { type: integer }
+                time: { type: string }
+                use_now: { type: boolean }
+                local_dt: { type: string, format: date-time }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/res-priority-data/:
+    get:
+      operationId: getResPriorityData
+      tags: [reservations]
+      security: [{ bearerAuth: [] }]
+      summary: A user's reservation priority data
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/res-report-issue-options/:
+    get:
+      operationId: getResReportIssueOptions
+      tags: [reservations]
+      security: [{ bearerAuth: [] }]
+      summary: Options for reporting a reservation issue
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/reservation-posting/:
+    get:
+      operationId: getReservationPosting
+      tags: [reservations]
+      security: [{ bearerAuth: [] }]
+      summary: Reservation posting(s) (see reference §8 ReservationOffer)
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/reservations-claimed-today/:
+    get:
+      operationId: getReservationsClaimedToday
+      tags: [reservations]
+      security: [{ bearerAuth: [] }]
+      summary: Reservations claimed today
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/apple-maps-token/:
+    get:
+      operationId: getAppleMapsToken
+      tags: [payments]
+      security: [{ bearerAuth: [] }]
+      summary: Apple Maps access token for embedded maps
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/stripe-payment-methods/:
+    get:
+      operationId: getStripePaymentMethods
+      tags: [payments]
+      security: [{ bearerAuth: [] }]
+      summary: A user's saved Stripe payment methods
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/ResultsEnvelope" } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/activity/:
+    post:
+      operationId: createActivity
+      tags: [telemetry]
+      servers: [{ url: "https://activity-service-978733420956.northamerica-northeast1.run.app" }]
+      security: [{ bearerAuth: [] }]
+      summary: >
+        Fire-and-forget analytics event sink. Reference §7 lists this path on both the
+        ACTIVITY host (row 136) and the ONBOARD host (row 135, observed during login,
+        H3-login) — OpenAPI paths are host-agnostic and cannot be duplicated, so this
+        single operation is modeled on the ACTIVITY host; it is also accepted on
+        https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app during login.
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object } } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
+  /api/api-error/:
+    post:
+      operationId: createApiError
+      tags: [telemetry]
+      servers: [{ url: "https://activity-service-978733420956.northamerica-northeast1.run.app" }]
+      security: [{ bearerAuth: [] }]
+      summary: Fire-and-forget client-error reporting sink
+      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object } } }
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
 components:
   schemas:
     User:
