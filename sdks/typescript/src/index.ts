@@ -827,6 +827,8 @@ export type {
   PublishedList,
   RefreshRequest,
   RefreshTokenData,
+  RefreshTokenError,
+  RefreshTokenErrors,
   RefreshTokenResponse,
   RefreshTokenResponses,
   RemoveBookmarkData,

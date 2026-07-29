@@ -29,6 +29,7 @@ class CreateFilterListBody:
         sort_method (str | Unset):
         coords (str | Unset):
         ids (list[int] | Unset):
+        load_businesses (bool | Unset):
     """
 
     filters: list[CreateFilterListBodyFiltersItem] | Unset = UNSET
@@ -40,6 +41,7 @@ class CreateFilterListBody:
     sort_method: str | Unset = UNSET
     coords: str | Unset = UNSET
     ids: list[int] | Unset = UNSET
+    load_businesses: bool | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -76,6 +78,8 @@ class CreateFilterListBody:
         if not isinstance(self.ids, Unset):
             ids = self.ids
 
+        load_businesses = self.load_businesses
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -97,6 +101,8 @@ class CreateFilterListBody:
             field_dict["coords"] = coords
         if ids is not UNSET:
             field_dict["ids"] = ids
+        if load_businesses is not UNSET:
+            field_dict["load_businesses"] = load_businesses
 
         return field_dict
 
@@ -146,6 +152,8 @@ class CreateFilterListBody:
 
         ids = cast(list[int], d.pop("ids", UNSET))
 
+        load_businesses = d.pop("load_businesses", UNSET)
+
         create_filter_list_body = cls(
             filters=filters,
             list_field=list_field,
@@ -156,6 +164,7 @@ class CreateFilterListBody:
             sort_method=sort_method,
             coords=coords,
             ids=ids,
+            load_businesses=load_businesses,
         )
 
         create_filter_list_body.additional_properties = d

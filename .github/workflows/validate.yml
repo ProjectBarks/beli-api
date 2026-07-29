@@ -12,10 +12,10 @@ jobs:
         with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - name: Build TS SDK
-        run: cd sdks/typescript && npm ci && npm run build
+      # The TS SDK is consumed as source (vitest/tsx transpiles it) via the
+      # validation package's `file:../sdks/typescript` dep — no build/ci step needed.
       - name: Install validation deps
-        run: cd validation && npm ci
+        run: cd validation && npm install
       - name: Compute affected operations
         id: aff
         run: |

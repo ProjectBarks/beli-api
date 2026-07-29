@@ -473,11 +473,12 @@ type CreateFilterListJSONBody struct {
 		Key   *string   `json:"key,omitempty"`
 		Value *[]string `json:"value,omitempty"`
 	} `json:"filters,omitempty"`
-	Ids        *[]int  `json:"ids,omitempty"`
-	ListField  *string `json:"list_field,omitempty"`
-	SortMethod *string `json:"sort_method,omitempty"`
-	User       *string `json:"user,omitempty"`
-	User2      *string `json:"user2,omitempty"`
+	Ids            *[]int  `json:"ids,omitempty"`
+	ListField      *string `json:"list_field,omitempty"`
+	LoadBusinesses *bool   `json:"load_businesses,omitempty"`
+	SortMethod     *string `json:"sort_method,omitempty"`
+	User           *string `json:"user,omitempty"`
+	User2          *string `json:"user2,omitempty"`
 }
 
 // CreateFilterListParams defines parameters for CreateFilterList.
@@ -536,7 +537,7 @@ type CreateFollowParams struct {
 
 // UpdateFollowJSONBody defines parameters for UpdateFollow.
 type UpdateFollowJSONBody struct {
-	UnfollowDt *string `json:"unfollow_dt,omitempty"`
+	UnfollowDt *time.Time `json:"unfollow_dt,omitempty"`
 }
 
 // UpdateFollowParams defines parameters for UpdateFollow.
@@ -828,6 +829,13 @@ type GetScoresParams struct {
 
 // SearchAppParams defines parameters for SearchApp.
 type SearchAppParams struct {
+	Term *string `form:"term,omitempty" json:"term,omitempty"`
+	City *string `form:"city,omitempty" json:"city,omitempty"`
+
+	// Coords e.g. "lat,lng"
+	Coords *string             `form:"coords,omitempty" json:"coords,omitempty"`
+	User   *openapi_types.UUID `form:"user,omitempty" json:"user,omitempty"`
+
 	// Origin Required by the backend; requests without an Origin header receive 403.
 	Origin OriginHeader `json:"Origin"`
 }
@@ -9418,6 +9426,69 @@ func NewSearchAppRequest(server string, params *SearchAppParams) (*http.Request,
 		return nil, err
 	}
 
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Term != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "term", *params.Term, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.City != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "city", *params.City, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Coords != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "coords", *params.Coords, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.User != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "user", *params.User, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -13814,13 +13885,17 @@ type CheckSharePostRankResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *map[string]interface{}
+	JSON200 *struct {
+		PostRankPopups *[]interface{} `json:"post_rank_popups,omitempty"`
+	}
 	// JSON401 the response for an HTTP 401 `application/json` response
 	JSON401 *ErrorDetail
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CheckSharePostRankResponse) GetJSON200() *map[string]interface{} {
+func (r CheckSharePostRankResponse) GetJSON200() *struct {
+	PostRankPopups *[]interface{} `json:"post_rank_popups,omitempty"`
+} {
 	return r.JSON200
 }
 
@@ -16310,13 +16385,13 @@ type CreatePassedUserCorrResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *[]interface{}
+	JSON200 *map[string]interface{}
 	// JSON401 the response for an HTTP 401 `application/json` response
 	JSON401 *ErrorDetail
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreatePassedUserCorrResponse) GetJSON200() *[]interface{} {
+func (r CreatePassedUserCorrResponse) GetJSON200() *map[string]interface{} {
 	return r.JSON200
 }
 
@@ -16550,13 +16625,19 @@ type ProcessAddRankingResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *map[string]interface{}
+	JSON200 *struct {
+		ClearPlaylists         *int  `json:"clear_playlists,omitempty"`
+		UnlockedPlaylistAccess *bool `json:"unlocked_playlist_access,omitempty"`
+	}
 	// JSON401 the response for an HTTP 401 `application/json` response
 	JSON401 *ErrorDetail
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ProcessAddRankingResponse) GetJSON200() *map[string]interface{} {
+func (r ProcessAddRankingResponse) GetJSON200() *struct {
+	ClearPlaylists         *int  `json:"clear_playlists,omitempty"`
+	UnlockedPlaylistAccess *bool `json:"unlocked_playlist_access,omitempty"`
+} {
 	return r.JSON200
 }
 
@@ -17991,11 +18072,18 @@ type RefreshTokenResponse struct {
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
 	JSON200 *AccessToken
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorDetail
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
 func (r RefreshTokenResponse) GetJSON200() *AccessToken {
 	return r.JSON200
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r RefreshTokenResponse) GetJSON401() *ErrorDetail {
+	return r.JSON401
 }
 
 // GetBody returns the raw response body bytes
@@ -22323,7 +22411,9 @@ func ParseCheckSharePostRankResponse(rsp *http.Response) (*CheckSharePostRankRes
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest map[string]interface{}
+		var dest struct {
+			PostRankPopups *[]interface{} `json:"post_rank_popups,omitempty"`
+		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -24039,7 +24129,7 @@ func ParseCreatePassedUserCorrResponse(rsp *http.Response) (*CreatePassedUserCor
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []interface{}
+		var dest map[string]interface{}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -24204,7 +24294,10 @@ func ParseProcessAddRankingResponse(rsp *http.Response) (*ProcessAddRankingRespo
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest map[string]interface{}
+		var dest struct {
+			ClearPlaylists         *int  `json:"clear_playlists,omitempty"`
+			UnlockedPlaylistAccess *bool `json:"unlocked_playlist_access,omitempty"`
+		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -25199,6 +25292,13 @@ func ParseRefreshTokenResponse(rsp *http.Response) (*RefreshTokenResponse, error
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorDetail
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	}
 

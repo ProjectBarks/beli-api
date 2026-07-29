@@ -319,6 +319,15 @@ export type RefreshTokenData = {
   url: "/api/token/refresh/";
 };
 
+export type RefreshTokenErrors = {
+  /**
+   * invalid
+   */
+  401: ErrorDetail;
+};
+
+export type RefreshTokenError = RefreshTokenErrors[keyof RefreshTokenErrors];
+
 export type RefreshTokenResponses = {
   /**
    * ok
@@ -1433,6 +1442,7 @@ export type CreateFilterListData = {
     sort_method?: string;
     coords?: string;
     ids?: Array<number>;
+    load_businesses?: boolean;
   };
   headers: {
     /**
@@ -1582,7 +1592,15 @@ export type SearchAppData = {
     Origin: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    term?: string;
+    city?: string;
+    /**
+     * e.g. "lat,lng"
+     */
+    coords?: string;
+    user?: string;
+  };
   url: "/api/search-app/";
 };
 
@@ -2855,7 +2873,9 @@ export type CreatePassedUserCorrResponses = {
   /**
    * ok
    */
-  200: Array<unknown>;
+  200: {
+    [key: string]: unknown;
+  };
 };
 
 export type CreatePassedUserCorrResponse =
@@ -3138,7 +3158,7 @@ export type CheckSharePostRankResponses = {
    * ok
    */
   200: {
-    [key: string]: unknown;
+    post_rank_popups?: Array<unknown>;
   };
 };
 
@@ -3282,7 +3302,8 @@ export type ProcessAddRankingResponses = {
    * ok
    */
   200: {
-    [key: string]: unknown;
+    clear_playlists?: number;
+    unlocked_playlist_access?: boolean;
   };
 };
 

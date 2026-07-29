@@ -6,6 +6,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.access_token import AccessToken
+from ...models.error_detail import ErrorDetail
 from ...models.refresh_request import RefreshRequest
 from ...types import Response
 
@@ -31,11 +32,18 @@ def _get_kwargs(
     return _kwargs
 
 
-def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> AccessToken | None:
+def _parse_response(
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> AccessToken | ErrorDetail | None:
     if response.status_code == 200:
         response_200 = AccessToken.from_dict(response.json())
 
         return response_200
+
+    if response.status_code == 401:
+        response_401 = ErrorDetail.from_dict(response.json())
+
+        return response_401
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -43,7 +51,9 @@ def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Res
         return None
 
 
-def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Response[AccessToken]:
+def _build_response(
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[AccessToken | ErrorDetail]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -57,7 +67,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: RefreshRequest,
     origin: str = "https://localhost",
-) -> Response[AccessToken]:
+) -> Response[AccessToken | ErrorDetail]:
     """Refresh an access token — refresh token itself is not rotated
 
     Args:
@@ -69,7 +79,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AccessToken]
+        Response[AccessToken | ErrorDetail]
     """
 
     kwargs = _get_kwargs(
@@ -89,7 +99,7 @@ def sync(
     client: AuthenticatedClient | Client,
     body: RefreshRequest,
     origin: str = "https://localhost",
-) -> AccessToken | None:
+) -> AccessToken | ErrorDetail | None:
     """Refresh an access token — refresh token itself is not rotated
 
     Args:
@@ -101,7 +111,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AccessToken
+        AccessToken | ErrorDetail
     """
 
     return sync_detailed(
@@ -116,7 +126,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: RefreshRequest,
     origin: str = "https://localhost",
-) -> Response[AccessToken]:
+) -> Response[AccessToken | ErrorDetail]:
     """Refresh an access token — refresh token itself is not rotated
 
     Args:
@@ -128,7 +138,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AccessToken]
+        Response[AccessToken | ErrorDetail]
     """
 
     kwargs = _get_kwargs(
@@ -146,7 +156,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: RefreshRequest,
     origin: str = "https://localhost",
-) -> AccessToken | None:
+) -> AccessToken | ErrorDetail | None:
     """Refresh an access token — refresh token itself is not rotated
 
     Args:
@@ -158,7 +168,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AccessToken
+        AccessToken | ErrorDetail
     """
 
     return (

@@ -1,56 +1,34 @@
 from __future__ import annotations
 
-import datetime
 from collections.abc import Mapping
 from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..types import UNSET, Unset
-
-T = TypeVar("T", bound="UpdateFollowBody")
+T = TypeVar("T", bound="CreatePassedUserCorrResponse200")
 
 
 @_attrs_define
-class UpdateFollowBody:
-    """
-    Attributes:
-        unfollow_dt (datetime.datetime | Unset):
-    """
+class CreatePassedUserCorrResponse200:
+    """ """
 
-    unfollow_dt: datetime.datetime | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        unfollow_dt: str | Unset = UNSET
-        if not isinstance(self.unfollow_dt, Unset):
-            unfollow_dt = self.unfollow_dt.isoformat()
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update({})
-        if unfollow_dt is not UNSET:
-            field_dict["unfollow_dt"] = unfollow_dt
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        _unfollow_dt = d.pop("unfollow_dt", UNSET)
-        unfollow_dt: datetime.datetime | Unset
-        if isinstance(_unfollow_dt, Unset):
-            unfollow_dt = UNSET
-        else:
-            unfollow_dt = datetime.datetime.fromisoformat(_unfollow_dt)
+        create_passed_user_corr_response_200 = cls()
 
-        update_follow_body = cls(
-            unfollow_dt=unfollow_dt,
-        )
-
-        update_follow_body.additional_properties = d
-        return update_follow_body
+        create_passed_user_corr_response_200.additional_properties = d
+        return create_passed_user_corr_response_200
 
     @property
     def additional_keys(self) -> list[str]:

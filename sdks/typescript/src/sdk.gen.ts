@@ -409,6 +409,7 @@ import type {
   ProcessAddRankingErrors,
   ProcessAddRankingResponses,
   RefreshTokenData,
+  RefreshTokenErrors,
   RefreshTokenResponses,
   RemoveBookmarkData,
   RemoveBookmarkErrors,
@@ -468,17 +469,19 @@ export const login = <ThrowOnError extends boolean = false>(
  */
 export const refreshToken = <ThrowOnError extends boolean = false>(
   options: Options<RefreshTokenData, ThrowOnError>,
-): RequestResult<RefreshTokenResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).post<RefreshTokenResponses, unknown, ThrowOnError>(
-    {
-      url: "/api/token/refresh/",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
+): RequestResult<RefreshTokenResponses, RefreshTokenErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    RefreshTokenResponses,
+    RefreshTokenErrors,
+    ThrowOnError
+  >({
+    url: "/api/token/refresh/",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
     },
-  );
+  });
 
 /**
  * Current user's full profile (incl. email, phone_no, home_city, referrer, sessions)

@@ -6,26 +6,49 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..types import UNSET, Unset
+
 T = TypeVar("T", bound="ProcessAddRankingResponse200")
 
 
 @_attrs_define
 class ProcessAddRankingResponse200:
-    """ """
+    """
+    Attributes:
+        clear_playlists (int | Unset):
+        unlocked_playlist_access (bool | Unset):
+    """
 
+    clear_playlists: int | Unset = UNSET
+    unlocked_playlist_access: bool | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        clear_playlists = self.clear_playlists
+
+        unlocked_playlist_access = self.unlocked_playlist_access
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
+        field_dict.update({})
+        if clear_playlists is not UNSET:
+            field_dict["clear_playlists"] = clear_playlists
+        if unlocked_playlist_access is not UNSET:
+            field_dict["unlocked_playlist_access"] = unlocked_playlist_access
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        process_add_ranking_response_200 = cls()
+        clear_playlists = d.pop("clear_playlists", UNSET)
+
+        unlocked_playlist_access = d.pop("unlocked_playlist_access", UNSET)
+
+        process_add_ranking_response_200 = cls(
+            clear_playlists=clear_playlists,
+            unlocked_playlist_access=unlocked_playlist_access,
+        )
 
         process_add_ranking_response_200.additional_properties = d
         return process_add_ranking_response_200

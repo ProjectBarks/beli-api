@@ -30,6 +30,7 @@ from .create_filter_options_body import CreateFilterOptionsBody
 from .create_filter_options_response_200 import CreateFilterOptionsResponse200
 from .create_follow_body import CreateFollowBody
 from .create_passed_user_corr_body import CreatePassedUserCorrBody
+from .create_passed_user_corr_response_200 import CreatePassedUserCorrResponse200
 from .create_user_hscroll_lists_placement_body import CreateUserHscrollListsPlacementBody
 from .create_user_hscroll_lists_placement_response_200 import CreateUserHscrollListsPlacementResponse200
 from .create_user_list_body import CreateUserListBody
@@ -148,6 +149,7 @@ __all__ = (
     "CreateFilterOptionsResponse200",
     "CreateFollowBody",
     "CreatePassedUserCorrBody",
+    "CreatePassedUserCorrResponse200",
     "CreateUserHscrollListsPlacementBody",
     "CreateUserHscrollListsPlacementResponse200",
     "CreateUserListBody",

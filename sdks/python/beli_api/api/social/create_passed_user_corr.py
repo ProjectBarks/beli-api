@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, cast
+from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
@@ -8,6 +8,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.create_passed_user_corr_body import CreatePassedUserCorrBody
+from ...models.create_passed_user_corr_response_200 import CreatePassedUserCorrResponse200
 from ...models.error_detail import ErrorDetail
 from ...types import Response
 
@@ -38,9 +39,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> ErrorDetail | list[Any] | None:
+) -> CreatePassedUserCorrResponse200 | ErrorDetail | None:
     if response.status_code == 200:
-        response_200 = cast(list[Any], response.json())
+        response_200 = CreatePassedUserCorrResponse200.from_dict(response.json())
 
         return response_200
 
@@ -57,7 +58,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[ErrorDetail | list[Any]]:
+) -> Response[CreatePassedUserCorrResponse200 | ErrorDetail]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -72,7 +73,7 @@ def sync_detailed(
     client: AuthenticatedClient,
     body: CreatePassedUserCorrBody,
     origin: str = "https://localhost",
-) -> Response[ErrorDetail | list[Any]]:
+) -> Response[CreatePassedUserCorrResponse200 | ErrorDetail]:
     """Batch affinity/correlation lookup for a list of users
 
     Args:
@@ -85,7 +86,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ErrorDetail | list[Any]]
+        Response[CreatePassedUserCorrResponse200 | ErrorDetail]
     """
 
     kwargs = _get_kwargs(
@@ -107,7 +108,7 @@ def sync(
     client: AuthenticatedClient,
     body: CreatePassedUserCorrBody,
     origin: str = "https://localhost",
-) -> ErrorDetail | list[Any] | None:
+) -> CreatePassedUserCorrResponse200 | ErrorDetail | None:
     """Batch affinity/correlation lookup for a list of users
 
     Args:
@@ -120,7 +121,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ErrorDetail | list[Any]
+        CreatePassedUserCorrResponse200 | ErrorDetail
     """
 
     return sync_detailed(
@@ -137,7 +138,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     body: CreatePassedUserCorrBody,
     origin: str = "https://localhost",
-) -> Response[ErrorDetail | list[Any]]:
+) -> Response[CreatePassedUserCorrResponse200 | ErrorDetail]:
     """Batch affinity/correlation lookup for a list of users
 
     Args:
@@ -150,7 +151,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ErrorDetail | list[Any]]
+        Response[CreatePassedUserCorrResponse200 | ErrorDetail]
     """
 
     kwargs = _get_kwargs(
@@ -170,7 +171,7 @@ async def asyncio(
     client: AuthenticatedClient,
     body: CreatePassedUserCorrBody,
     origin: str = "https://localhost",
-) -> ErrorDetail | list[Any] | None:
+) -> CreatePassedUserCorrResponse200 | ErrorDetail | None:
     """Batch affinity/correlation lookup for a list of users
 
     Args:
@@ -183,7 +184,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ErrorDetail | list[Any]
+        CreatePassedUserCorrResponse200 | ErrorDetail
     """
 
     return (
