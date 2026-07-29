@@ -245,6 +245,18 @@ export type PaginatedResults = {
   results?: Array<unknown>;
 };
 
+/**
+ * Body for /api/add-bookmark/ and /api/remove-bookmark/. Verified live.
+ */
+export type BookmarkRequest = {
+  user_id: string;
+  business_id: number;
+  /**
+   * 3-letter category code, e.g. RES, DES, BAR
+   */
+  category?: string;
+};
+
 export type AddRankingRequest = {
   category: string;
   user_id: string;
@@ -3568,9 +3580,7 @@ export type CreateDataUserBusinessTextResponse =
   CreateDataUserBusinessTextResponses[keyof CreateDataUserBusinessTextResponses];
 
 export type CreateBookmarkData = {
-  body: {
-    [key: string]: unknown;
-  };
+  body: BookmarkRequest;
   headers: {
     /**
      * Required by the backend; requests without an Origin header receive 403.
@@ -3605,9 +3615,7 @@ export type CreateBookmarkResponse =
   CreateBookmarkResponses[keyof CreateBookmarkResponses];
 
 export type RemoveBookmarkData = {
-  body: {
-    [key: string]: unknown;
-  };
+  body: BookmarkRequest;
   headers: {
     /**
      * Required by the backend; requests without an Origin header receive 403.

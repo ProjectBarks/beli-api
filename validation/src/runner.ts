@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 import { createClient, type Client } from "beli-api-ts/client";
 import * as sdkFns from "beli-api-ts";
-import { validAccessToken, type Store } from "./auth";
+import { validAccessToken, ORIGIN, USER_AGENT, type Store } from "./auth";
 import { DESCRIPTORS, type Ctx } from "./endpoints";
 
 // Re-export the single canonical `Ctx` — defined in ./endpoints (Task 12) specifically so
@@ -78,7 +78,9 @@ function decodeUserId(accessToken: string): string {
 function makeAuthedClient(baseUrl: string, accessToken: string): Client {
   const c = createClient({ baseUrl });
   c.interceptors.request.use((req) => {
-    req.headers.set("Origin", "https://localhost");
+    req.headers.set("Origin", ORIGIN);
+    // Required: the backend 403s requests without a browser-like User-Agent.
+    req.headers.set("User-Agent", USER_AGENT);
     req.headers.set("Authorization", `Bearer ${accessToken}`);
     return req;
   });

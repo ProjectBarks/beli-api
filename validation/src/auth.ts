@@ -1,5 +1,22 @@
 const ONBOARD = "https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app";
-const HEADERS = { "Content-Type": "application/json", Origin: "https://localhost" };
+
+/**
+ * The backend rejects non-browser clients with 403
+ * ({"detail":"You do not have permission to perform this action."}), so a
+ * browser-like User-Agent is required alongside Origin. This is the UA the iOS
+ * app sends.
+ */
+export const USER_AGENT =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
+export const ORIGIN = "capacitor://localhost";
+
+const HEADERS = {
+  Accept: "application/json",
+  "Content-Type": "application/json",
+  Origin: ORIGIN,
+  "User-Agent": USER_AGENT,
+  "Accept-Language": "en-US,en;q=0.9",
+};
 export type Store = { access?: string; refresh?: string; email?: string; password?: string };
 
 export function decodeExp(jwt: string): number {

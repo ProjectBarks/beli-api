@@ -20,6 +20,7 @@
 // (built by `makeAuthedClient` in runner.ts), passed as the `client` option on each call —
 // exactly as `runner.ts#runOps` does for reads.
 import { updateFollow, deleteRanking, removeBookmark } from "beli-api-ts";
+import { ORIGIN } from "./auth";
 
 export type Ctx = {
   /** Bearer-authenticated SDK client for the logged-in test account. */
@@ -149,11 +150,28 @@ export const DESCRIPTORS: Record<string, Descriptor> = {
   // --- ranking ---
   createRanking: {
     kind: "write-reversible",
-    args: (c) => ({
-      category: "RES",
-      user_id: c.userId,
-      business_id: c.testTargetBusiness,
-    }),
+    // The backend 500s on a partial body: local_datetime, utc_offset, visit_dates and the
+    // client capability flags are all required alongside the sentiment seed (`value`).
+    args: (c) => {
+      const now = new Date();
+      const today = now.toISOString().slice(0, 10);
+      return {
+        category: "DES",
+        user_id: c.userId,
+        business_id: c.testTargetBusiness,
+        value: 2.5,
+        tagged_users: [],
+        local_datetime: now.toISOString(),
+        utc_offset: now.getTimezoneOffset() * -1,
+        visit_dates: [today],
+        visit_date_on_rank: today,
+        rank_button_source: null,
+        overall_rank_count: 1,
+        version_supports_multi_category: true,
+        has_access_multi_category: false,
+        supports_featured_list_challenges: true,
+      };
+    },
     // `res` is the unwrapped `AddRankingResponse` returned by createRanking. `results` is
     // `x-beli-unverified` (typed as `{[key: string]: unknown}`), so `id` is read defensively.
     revert: async (c, res) => {
@@ -179,16 +197,15 @@ export const DESCRIPTORS: Record<string, Descriptor> = {
   getUserScores: { kind: "read" },
   createBookmark: {
     kind: "write-reversible",
-    args: (c) => ({ user: c.userId, business: c.testTargetBusiness, category: "RES" }),
-    // Both createBookmark's and removeBookmark's request/response bodies are
-    // `x-beli-unverified` in the spec (typed as `{[key: string]: unknown}`) — the revert
-    // doesn't depend on the create response shape at all, it just re-sends the same
-    // user/business identity that add-bookmark used.
+    // Verified live: the backend wants {user_id, business_id, category}. The {user, business}
+    // form (inferred from an external client) returns 500. Both endpoints take the same body;
+    // the revert just re-sends the same identity to /api/remove-bookmark/.
+    args: (c) => ({ user_id: c.userId, business_id: c.testTargetBusiness, category: "DES" }),
     revert: async (c) => {
       await removeBookmark({
         client: c.sdk,
-        body: { user: c.userId, business: c.testTargetBusiness },
-        headers: { Origin: "https://localhost" },
+        body: { user_id: c.userId, business_id: c.testTargetBusiness, category: "DES" },
+        headers: { Origin: ORIGIN },
         throwOnError: false,
       });
     },

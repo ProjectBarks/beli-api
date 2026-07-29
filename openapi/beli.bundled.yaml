@@ -2806,10 +2806,9 @@ paths:
       operationId: createBookmark
       tags:
         - ranking
-      x-beli-unverified: true
       security:
         - bearerAuth: []
-      summary: Bookmark a business (external source only — beli-mcp; not observed in our captures)
+      summary: Bookmark a business ("Want to Try"). Verified live.
       parameters:
         - $ref: '#/components/parameters/OriginHeader'
       requestBody:
@@ -2817,7 +2816,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              $ref: '#/components/schemas/BookmarkRequest'
       responses:
         '200':
           description: ok
@@ -2836,10 +2835,9 @@ paths:
       operationId: removeBookmark
       tags:
         - ranking
-      x-beli-unverified: true
       security:
         - bearerAuth: []
-      summary: Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+      summary: Remove a bookmark from a business. Verified live.
       parameters:
         - $ref: '#/components/parameters/OriginHeader'
       requestBody:
@@ -2847,7 +2845,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              $ref: '#/components/schemas/BookmarkRequest'
       responses:
         '200':
           description: ok
@@ -4634,6 +4632,21 @@ components:
         results:
           type: array
           items: {}
+    BookmarkRequest:
+      type: object
+      description: Body for /api/add-bookmark/ and /api/remove-bookmark/. Verified live.
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        business_id:
+          type: integer
+        category:
+          type: string
+          description: 3-letter category code, e.g. RES, DES, BAR
+      required:
+        - user_id
+        - business_id
     AddRankingRequest:
       type: object
       properties:

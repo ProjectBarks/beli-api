@@ -5,7 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.create_bookmark_body import CreateBookmarkBody
+from ...models.bookmark_request import BookmarkRequest
 from ...models.create_bookmark_response_200 import CreateBookmarkResponse200
 from ...models.error_detail import ErrorDetail
 from ...types import Response
@@ -13,7 +13,7 @@ from ...types import Response
 
 def _get_kwargs(
     *,
-    body: CreateBookmarkBody,
+    body: BookmarkRequest,
     origin: str = "https://localhost",
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
@@ -65,14 +65,15 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-    body: CreateBookmarkBody,
+    body: BookmarkRequest,
     origin: str = "https://localhost",
 ) -> Response[CreateBookmarkResponse200 | ErrorDetail]:
-    """Bookmark a business (external source only — beli-mcp; not observed in our captures)
+    r"""Bookmark a business (\"Want to Try\"). Verified live.
 
     Args:
         origin (str):  Default: 'https://localhost'.
-        body (CreateBookmarkBody):
+        body (BookmarkRequest): Body for /api/add-bookmark/ and /api/remove-bookmark/. Verified
+            live.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -97,14 +98,15 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-    body: CreateBookmarkBody,
+    body: BookmarkRequest,
     origin: str = "https://localhost",
 ) -> CreateBookmarkResponse200 | ErrorDetail | None:
-    """Bookmark a business (external source only — beli-mcp; not observed in our captures)
+    r"""Bookmark a business (\"Want to Try\"). Verified live.
 
     Args:
         origin (str):  Default: 'https://localhost'.
-        body (CreateBookmarkBody):
+        body (BookmarkRequest): Body for /api/add-bookmark/ and /api/remove-bookmark/. Verified
+            live.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -124,14 +126,15 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-    body: CreateBookmarkBody,
+    body: BookmarkRequest,
     origin: str = "https://localhost",
 ) -> Response[CreateBookmarkResponse200 | ErrorDetail]:
-    """Bookmark a business (external source only — beli-mcp; not observed in our captures)
+    r"""Bookmark a business (\"Want to Try\"). Verified live.
 
     Args:
         origin (str):  Default: 'https://localhost'.
-        body (CreateBookmarkBody):
+        body (BookmarkRequest): Body for /api/add-bookmark/ and /api/remove-bookmark/. Verified
+            live.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -154,14 +157,15 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-    body: CreateBookmarkBody,
+    body: BookmarkRequest,
     origin: str = "https://localhost",
 ) -> CreateBookmarkResponse200 | ErrorDetail | None:
-    """Bookmark a business (external source only — beli-mcp; not observed in our captures)
+    r"""Bookmark a business (\"Want to Try\"). Verified live.
 
     Args:
         origin (str):  Default: 'https://localhost'.
-        body (CreateBookmarkBody):
+        body (BookmarkRequest): Body for /api/add-bookmark/ and /api/remove-bookmark/. Verified
+            live.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

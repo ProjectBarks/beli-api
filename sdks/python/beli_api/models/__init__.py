@@ -4,6 +4,7 @@ from .access_token import AccessToken
 from .add_ranking_request import AddRankingRequest
 from .add_ranking_response import AddRankingResponse
 from .add_ranking_response_results import AddRankingResponseResults
+from .bookmark_request import BookmarkRequest
 from .business import Business
 from .business_business_hours_config import BusinessBusinessHoursConfig
 from .business_businessdistinction_set_item import BusinessBusinessdistinctionSetItem
@@ -14,7 +15,6 @@ from .create_activity_body import CreateActivityBody
 from .create_activity_response_200 import CreateActivityResponse200
 from .create_api_error_body import CreateApiErrorBody
 from .create_api_error_response_200 import CreateApiErrorResponse200
-from .create_bookmark_body import CreateBookmarkBody
 from .create_bookmark_response_200 import CreateBookmarkResponse200
 from .create_businesses_res_availability_body import CreateBusinessesResAvailabilityBody
 from .create_businesses_res_availability_response_200 import CreateBusinessesResAvailabilityResponse200
@@ -94,7 +94,6 @@ from .process_add_ranking_response_200 import ProcessAddRankingResponse200
 from .published_list import PublishedList
 from .published_list_challenge_info_type_0 import PublishedListChallengeInfoType0
 from .refresh_request import RefreshRequest
-from .remove_bookmark_body import RemoveBookmarkBody
 from .remove_bookmark_response_200 import RemoveBookmarkResponse200
 from .reservation_offer import ReservationOffer
 from .reservation_offer_reservation_platforms import ReservationOfferReservationPlatforms
@@ -123,6 +122,7 @@ __all__ = (
     "AddRankingRequest",
     "AddRankingResponse",
     "AddRankingResponseResults",
+    "BookmarkRequest",
     "Business",
     "BusinessBusinessdistinctionSetItem",
     "BusinessBusinessHoursConfig",
@@ -133,7 +133,6 @@ __all__ = (
     "CreateActivityResponse200",
     "CreateApiErrorBody",
     "CreateApiErrorResponse200",
-    "CreateBookmarkBody",
     "CreateBookmarkResponse200",
     "CreateBusinessesResAvailabilityBody",
     "CreateBusinessesResAvailabilityResponse200",
@@ -213,7 +212,6 @@ __all__ = (
     "PublishedList",
     "PublishedListChallengeInfoType0",
     "RefreshRequest",
-    "RemoveBookmarkBody",
     "RemoveBookmarkResponse200",
     "ReservationOffer",
     "ReservationOfferReservationPlatforms",

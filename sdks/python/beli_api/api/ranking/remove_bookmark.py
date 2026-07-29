@@ -5,15 +5,15 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.bookmark_request import BookmarkRequest
 from ...models.error_detail import ErrorDetail
-from ...models.remove_bookmark_body import RemoveBookmarkBody
 from ...models.remove_bookmark_response_200 import RemoveBookmarkResponse200
 from ...types import Response
 
 
 def _get_kwargs(
     *,
-    body: RemoveBookmarkBody,
+    body: BookmarkRequest,
     origin: str = "https://localhost",
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
@@ -65,14 +65,15 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-    body: RemoveBookmarkBody,
+    body: BookmarkRequest,
     origin: str = "https://localhost",
 ) -> Response[ErrorDetail | RemoveBookmarkResponse200]:
-    """Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+    """Remove a bookmark from a business. Verified live.
 
     Args:
         origin (str):  Default: 'https://localhost'.
-        body (RemoveBookmarkBody):
+        body (BookmarkRequest): Body for /api/add-bookmark/ and /api/remove-bookmark/. Verified
+            live.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -97,14 +98,15 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-    body: RemoveBookmarkBody,
+    body: BookmarkRequest,
     origin: str = "https://localhost",
 ) -> ErrorDetail | RemoveBookmarkResponse200 | None:
-    """Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+    """Remove a bookmark from a business. Verified live.
 
     Args:
         origin (str):  Default: 'https://localhost'.
-        body (RemoveBookmarkBody):
+        body (BookmarkRequest): Body for /api/add-bookmark/ and /api/remove-bookmark/. Verified
+            live.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -124,14 +126,15 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-    body: RemoveBookmarkBody,
+    body: BookmarkRequest,
     origin: str = "https://localhost",
 ) -> Response[ErrorDetail | RemoveBookmarkResponse200]:
-    """Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+    """Remove a bookmark from a business. Verified live.
 
     Args:
         origin (str):  Default: 'https://localhost'.
-        body (RemoveBookmarkBody):
+        body (BookmarkRequest): Body for /api/add-bookmark/ and /api/remove-bookmark/. Verified
+            live.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -154,14 +157,15 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-    body: RemoveBookmarkBody,
+    body: BookmarkRequest,
     origin: str = "https://localhost",
 ) -> ErrorDetail | RemoveBookmarkResponse200 | None:
-    """Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+    """Remove a bookmark from a business. Verified live.
 
     Args:
         origin (str):  Default: 'https://localhost'.
-        body (RemoveBookmarkBody):
+        body (BookmarkRequest): Body for /api/add-bookmark/ and /api/remove-bookmark/. Verified
+            live.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

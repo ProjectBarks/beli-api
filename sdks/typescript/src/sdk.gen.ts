@@ -2235,7 +2235,7 @@ export const createDataUserBusinessText = <
   });
 
 /**
- * Bookmark a business (external source only — beli-mcp; not observed in our captures)
+ * Bookmark a business ("Want to Try"). Verified live.
  */
 export const createBookmark = <ThrowOnError extends boolean = false>(
   options: Options<CreateBookmarkData, ThrowOnError>,
@@ -2255,7 +2255,7 @@ export const createBookmark = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+ * Remove a bookmark from a business. Verified live.
  */
 export const removeBookmark = <ThrowOnError extends boolean = false>(
   options: Options<RemoveBookmarkData, ThrowOnError>,

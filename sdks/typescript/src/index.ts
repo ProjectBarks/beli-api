@@ -147,6 +147,7 @@ export type {
   AccessToken,
   AddRankingRequest,
   AddRankingResponse,
+  BookmarkRequest,
   Business,
   BusinessHours,
   CachedScore,

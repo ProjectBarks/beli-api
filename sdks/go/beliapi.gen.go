@@ -66,6 +66,15 @@ type AddRankingResponse struct {
 	Score      *float32                `json:"score,omitempty"`
 }
 
+// BookmarkRequest Body for /api/add-bookmark/ and /api/remove-bookmark/. Verified live.
+type BookmarkRequest struct {
+	BusinessId int `json:"business_id"`
+
+	// Category 3-letter category code, e.g. RES, DES, BAR
+	Category *string            `json:"category,omitempty"`
+	UserId   openapi_types.UUID `json:"user_id"`
+}
+
 // ErrorDetail defines model for ErrorDetail.
 type ErrorDetail struct {
 	Code   *string `json:"code,omitempty"`
@@ -168,9 +177,6 @@ type CreateActivityParams struct {
 	// Origin Required by the backend; requests without an Origin header receive 403.
 	Origin OriginHeader `json:"Origin"`
 }
-
-// CreateBookmarkJSONBody defines parameters for CreateBookmark.
-type CreateBookmarkJSONBody = map[string]interface{}
 
 // CreateBookmarkParams defines parameters for CreateBookmark.
 type CreateBookmarkParams struct {
@@ -782,9 +788,6 @@ type GetRecScoreParams struct {
 	Origin OriginHeader `json:"Origin"`
 }
 
-// RemoveBookmarkJSONBody defines parameters for RemoveBookmark.
-type RemoveBookmarkJSONBody = map[string]interface{}
-
 // RemoveBookmarkParams defines parameters for RemoveBookmark.
 type RemoveBookmarkParams struct {
 	// Origin Required by the backend; requests without an Origin header receive 403.
@@ -1134,7 +1137,7 @@ type GetYourNewsfeedReactionParams struct {
 type CreateActivityJSONRequestBody = CreateActivityJSONBody
 
 // CreateBookmarkJSONRequestBody defines body for CreateBookmark for application/json ContentType.
-type CreateBookmarkJSONRequestBody = CreateBookmarkJSONBody
+type CreateBookmarkJSONRequestBody = BookmarkRequest
 
 // CreateRankingJSONRequestBody defines body for CreateRanking for application/json ContentType.
 type CreateRankingJSONRequestBody = AddRankingRequest
@@ -1182,7 +1185,7 @@ type CreatePassedUserCorrJSONRequestBody CreatePassedUserCorrJSONBody
 type ProcessAddRankingJSONRequestBody = AddRankingRequest
 
 // RemoveBookmarkJSONRequestBody defines body for RemoveBookmark for application/json ContentType.
-type RemoveBookmarkJSONRequestBody = RemoveBookmarkJSONBody
+type RemoveBookmarkJSONRequestBody = BookmarkRequest
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
@@ -1293,14 +1296,14 @@ type ClientInterface interface {
 	// Corresponds with POST /api/activity/ (the `CreateActivity` operationId).
 	CreateActivity(ctx context.Context, params *CreateActivityParams, body CreateActivityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CreateBookmarkWithBody Bookmark a business (external source only — beli-mcp; not observed in our captures)
+	// CreateBookmarkWithBody Bookmark a business ("Want to Try"). Verified live.
 	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /api/add-bookmark/ (the `CreateBookmark` operationId).
 	CreateBookmarkWithBody(ctx context.Context, params *CreateBookmarkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CreateBookmark Bookmark a business (external source only — beli-mcp; not observed in our captures)
+	// CreateBookmark Bookmark a business ("Want to Try"). Verified live.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -1877,14 +1880,14 @@ type ClientInterface interface {
 	// Corresponds with GET /api/rec-score/ (the `GetRecScore` operationId).
 	GetRecScore(ctx context.Context, params *GetRecScoreParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// RemoveBookmarkWithBody Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+	// RemoveBookmarkWithBody Remove a bookmark from a business. Verified live.
 	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with PUT /api/remove-bookmark/ (the `RemoveBookmark` operationId).
 	RemoveBookmarkWithBody(ctx context.Context, params *RemoveBookmarkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// RemoveBookmark Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+	// RemoveBookmark Remove a bookmark from a business. Verified live.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -2239,7 +2242,7 @@ func (c *Client) CreateActivity(ctx context.Context, params *CreateActivityParam
 	return c.Client.Do(req)
 }
 
-// CreateBookmarkWithBody Bookmark a business (external source only — beli-mcp; not observed in our captures)
+// CreateBookmarkWithBody Bookmark a business ("Want to Try"). Verified live.
 //
 // Takes any type of body and a specified content type.
 //
@@ -2256,7 +2259,7 @@ func (c *Client) CreateBookmarkWithBody(ctx context.Context, params *CreateBookm
 	return c.Client.Do(req)
 }
 
-// CreateBookmark Bookmark a business (external source only — beli-mcp; not observed in our captures)
+// CreateBookmark Bookmark a business ("Want to Try"). Verified live.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -3863,7 +3866,7 @@ func (c *Client) GetRecScore(ctx context.Context, params *GetRecScoreParams, req
 	return c.Client.Do(req)
 }
 
-// RemoveBookmarkWithBody Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+// RemoveBookmarkWithBody Remove a bookmark from a business. Verified live.
 //
 // Takes any type of body and a specified content type.
 //
@@ -3880,7 +3883,7 @@ func (c *Client) RemoveBookmarkWithBody(ctx context.Context, params *RemoveBookm
 	return c.Client.Do(req)
 }
 
-// RemoveBookmark Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+// RemoveBookmark Remove a bookmark from a business. Verified live.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -11587,14 +11590,14 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /api/activity/ (the `CreateActivity` operationId).
 	CreateActivityWithResponse(ctx context.Context, params *CreateActivityParams, body CreateActivityJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateActivityResponse, error)
 
-	// CreateBookmarkWithBodyWithResponse Bookmark a business (external source only — beli-mcp; not observed in our captures)
+	// CreateBookmarkWithBodyWithResponse Bookmark a business ("Want to Try"). Verified live.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /api/add-bookmark/ (the `CreateBookmark` operationId).
 	CreateBookmarkWithBodyWithResponse(ctx context.Context, params *CreateBookmarkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBookmarkResponse, error)
 
-	// CreateBookmarkWithResponse Bookmark a business (external source only — beli-mcp; not observed in our captures)
+	// CreateBookmarkWithResponse Bookmark a business ("Want to Try"). Verified live.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -12315,14 +12318,14 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /api/rec-score/ (the `GetRecScore` operationId).
 	GetRecScoreWithResponse(ctx context.Context, params *GetRecScoreParams, reqEditors ...RequestEditorFn) (*GetRecScoreResponse, error)
 
-	// RemoveBookmarkWithBodyWithResponse Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+	// RemoveBookmarkWithBodyWithResponse Remove a bookmark from a business. Verified live.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with PUT /api/remove-bookmark/ (the `RemoveBookmark` operationId).
 	RemoveBookmarkWithBodyWithResponse(ctx context.Context, params *RemoveBookmarkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RemoveBookmarkResponse, error)
 
-	// RemoveBookmarkWithResponse Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+	// RemoveBookmarkWithResponse Remove a bookmark from a business. Verified live.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -19485,7 +19488,7 @@ func (c *ClientWithResponses) CreateActivityWithResponse(ctx context.Context, pa
 	return ParseCreateActivityResponse(rsp)
 }
 
-// CreateBookmarkWithBodyWithResponse Bookmark a business (external source only — beli-mcp; not observed in our captures)
+// CreateBookmarkWithBodyWithResponse Bookmark a business ("Want to Try"). Verified live.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -19498,7 +19501,7 @@ func (c *ClientWithResponses) CreateBookmarkWithBodyWithResponse(ctx context.Con
 	return ParseCreateBookmarkResponse(rsp)
 }
 
-// CreateBookmarkWithResponse Bookmark a business (external source only — beli-mcp; not observed in our captures)
+// CreateBookmarkWithResponse Bookmark a business ("Want to Try"). Verified live.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -20837,7 +20840,7 @@ func (c *ClientWithResponses) GetRecScoreWithResponse(ctx context.Context, param
 	return ParseGetRecScoreResponse(rsp)
 }
 
-// RemoveBookmarkWithBodyWithResponse Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+// RemoveBookmarkWithBodyWithResponse Remove a bookmark from a business. Verified live.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -20850,7 +20853,7 @@ func (c *ClientWithResponses) RemoveBookmarkWithBodyWithResponse(ctx context.Con
 	return ParseRemoveBookmarkResponse(rsp)
 }
 
-// RemoveBookmarkWithResponse Remove a bookmark from a business (external source only — beli-mcp; not observed in our captures)
+// RemoveBookmarkWithResponse Remove a bookmark from a business. Verified live.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
