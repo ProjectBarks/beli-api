@@ -5,6 +5,9 @@
   "scripts": {
     "test": "vitest run"
   },
+  "dependencies": {
+    "beli-api-ts": "file:../sdks/typescript"
+  },
   "devDependencies": {
     "@types/node": "^20",
     "typescript": "^5.9.3",
