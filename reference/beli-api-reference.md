@@ -186,8 +186,19 @@ POST {API}/api/user-setting/   { user, field_name, value }  -> { user, field:{id
 POST/PUT {API}/api/user-business-photo/[{id}/]     # allow-header + beli-mcp; body not captured
 ```
 
+### Discovery — filtered/trending (observed H4)
+```
+POST {API}/api/filter-list/
+{ "filters": [{ "key": "CITY", "value": ["Current Location"] },
+              { "key": "GOODFOR", "value": ["GOODFORBEER"] }],   // value is an array of strings
+  "list_field": "TRENDING", "user": "<uuid>", "user2": "<uuid>",  // user2 IS sent (observed)
+  "category": "RES", "bounds": null, "sort_method": "Most Trending",
+  "coords": "lat,lng", "ids": [<business_id>,...], "load_businesses": <bool> }
+-> { "results": [<business_id>], "count": N, "businesses": [], "business_hash": {...} }
+```
+
 ### Other observed writes
-`POST /api/user/list/` (batch user hydration `{ids:[uuid]}`), `POST /api/filter-list/` &
+`POST /api/user/list/` (batch user hydration `{ids:[uuid]}`),
 `POST /api/filter-options/` (filtered/trending discovery), `POST /api/passed-user-corr/{uuid}/`
 (`{ids:[uuid]}` batch affinity), `POST /api/user-rec-scores/`, `POST /api/user-hscroll-lists/placement/`,
 `POST /api/challenge-progress-share/{uuid}/`, `PUT /api/notification/{id}/`,
