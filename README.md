@@ -14,7 +14,7 @@ Unofficial **Beli API** client / SDK for the Beli restaurant-ranking app — Typ
 
 [Beli](https://beliapp.com) (the restaurant-ranking / "food Letterboxd" app) has no public API. This
 repo is a single hand-written **OpenAPI 3.1** spec — reverse-engineered from real app traffic and
-cross-checked against independent community efforts — covering 137 endpoints across auth, search,
+cross-checked against independent community efforts — covering 140 operations across auth, search,
 business detail, social graph, rankings, feed, lists, notifications, reservations, payments, and
 telemetry. From that one spec, `make sdks` regenerates fully typed **TypeScript**, **Python**, and
 **Go** clients, so you don't have to hand-roll HTTP calls or guess at request/response shapes.
@@ -98,7 +98,7 @@ resp, _ = api.SearchApp(ctx, &beliapi.SearchAppParams{Origin: "https://localhost
 | Feature | Detail |
 |---|---|
 | Auth & token lifecycle | Login with email/password; access tokens live 20 min and refresh tokens live 7 days (not rotated) — reuse the cached access token, refresh near expiry, re-login only once the refresh token itself expires |
-| Endpoint coverage | 137 endpoints across 12 modules (auth, profile, search, business, social, ranking, feed, lists, notifications, reservations, payments, telemetry) |
+| Endpoint coverage | 140 operations across 12 modules (auth, profile, search, business, social, ranking, feed, lists, notifications, reservations, payments, telemetry) |
 | Languages | TypeScript, Python, Go — all generated from one OpenAPI 3.1 spec, kept in sync |
 | Typed | Full request/response types (interfaces, Pydantic-style dataclasses, Go structs) — no hand-maintained model drift |
 | Rate-limit courtesy | No documented server rate limit; SDKs default to a polite **~350 ms** interval between requests |
@@ -106,9 +106,9 @@ resp, _ = api.SearchApp(ctx, &beliapi.SearchAppParams{Origin: "https://localhost
 
 ## Endpoint coverage
 
-137 endpoints, hand-cataloged from live traffic across 12 modules. Full detail, HTTP verbs, hosts, and
-provenance live in [`openapi/beli.yaml`](openapi/beli.yaml) (and the human-readable
-[endpoint catalogue](reference/beli-api-reference.md#7-full-endpoint-catalogue)).
+140 operations across 137 unique endpoints, hand-cataloged from live traffic across 12 modules. Full
+detail, HTTP verbs, hosts, and provenance live in [`openapi/beli.yaml`](openapi/beli.yaml) (and the
+human-readable [endpoint catalogue](reference/beli-api-reference.md#7-full-endpoint-catalogue)).
 
 | Module | Operations |
 |---|---|
@@ -125,6 +125,9 @@ provenance live in [`openapi/beli.yaml`](openapi/beli.yaml) (and the human-reada
 | Payments & external tokens | 2 |
 | Telemetry | 3 |
 | **Total** | **137** |
+
+> 140 operations across 137 unique endpoints (3 endpoints expose more than one operation: follow
+> GET+POST, user-setting GET+POST, and the collapsed activity/bookmark operations).
 
 ## Authentication & credentials
 

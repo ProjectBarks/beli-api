@@ -53,6 +53,7 @@ paths:
         content: { application/json: { schema: { $ref: "#/components/schemas/RefreshRequest" } } }
       responses:
         "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/AccessToken" } } } }
+        "401": { description: invalid, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
   /api/user/logged-in/:
     get:
       operationId: getLoggedIn
@@ -453,6 +454,7 @@ paths:
                 sort_method: { type: string }
                 coords: { type: string }
                 ids: { type: array, items: { type: integer } }
+                load_businesses: { type: boolean }
       responses:
         "200": { description: ok, content: { application/json: { schema: { type: object } } } }
         "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
@@ -500,7 +502,12 @@ paths:
       tags: [search]
       security: [{ bearerAuth: [] }]
       summary: Primary in-app search (businesses, users, lists)
-      parameters: [{ $ref: "#/components/parameters/OriginHeader" }]
+      parameters:
+        - { $ref: "#/components/parameters/OriginHeader" }
+        - { name: term, in: query, required: false, schema: { type: string } }
+        - { name: city, in: query, required: false, schema: { type: string } }
+        - { name: coords, in: query, required: false, schema: { type: string }, description: "e.g. \"lat,lng\"" }
+        - { name: user, in: query, required: false, schema: { type: string, format: uuid } }
       responses:
         "200": { description: ok, content: { application/json: { schema: { type: object } } } }
         "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
@@ -859,7 +866,7 @@ paths:
             schema:
               type: object
               properties:
-                unfollow_dt: { type: string }
+                unfollow_dt: { type: string, format: date-time }
       responses:
         "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/FollowEdge" } } } }
         "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
@@ -943,7 +950,7 @@ paths:
                 ids: { type: array, items: { type: string, format: uuid } }
               required: [ids]
       responses:
-        "200": { description: ok, content: { application/json: { schema: { type: array, items: {} } } } }
+        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
         "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
   /api/people-you-may-know-full/{uuid}/:
     get:
@@ -1050,7 +1057,7 @@ paths:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/AddRankingRequest" } } }
       responses:
-        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "200": { description: ok, content: { application/json: { schema: { type: object, properties: { post_rank_popups: { type: array, items: {} } } } } } }
         "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
   /api/delete-ranking/{uuid}/{id}/:
     put:
@@ -1105,7 +1112,7 @@ paths:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/AddRankingRequest" } } }
       responses:
-        "200": { description: ok, content: { application/json: { schema: { type: object } } } }
+        "200": { description: ok, content: { application/json: { schema: { type: object, properties: { clear_playlists: { type: integer }, unlocked_playlist_access: { type: boolean } } } } } }
         "401": { description: unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorDetail" } } } }
   /api/score-average/{uuid}/ALL/:
     get:
