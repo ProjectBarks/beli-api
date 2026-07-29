@@ -27,6 +27,225 @@ tags:
   - { name: telemetry }
 paths: {}
 components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        first_name: { type: string }
+        last_name: { type: string }
+        full_name: { type: string }
+        username: { type: string }
+        created_dt: { type: string, format: date-time }
+        instagram_url: { type: string, nullable: true }
+        tiktok_url: { type: string, nullable: true }
+        photo: { type: string, nullable: true }
+        profile_photo: { type: string, nullable: true }
+        public: { type: boolean }
+        school: { type: string, nullable: true }
+        company: { type: string, nullable: true }
+        has_supper_club: { type: boolean }
+        has_vip: { type: boolean }
+        is_playlist_eligible: { type: boolean }
+      required: [id, username]
+    UserExtended:
+      description: >
+        Extended profile shape returned by self/detail endpoints (adds
+        contact + onboarding fields on top of the base User shape).
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - type: object
+          properties:
+            phone_no: { type: string, nullable: true }
+            email: { type: string, nullable: true }
+            home_city: { type: string, nullable: true }
+            bio: { type: string, nullable: true }
+            referrer: {}
+            referral_link: { type: string, nullable: true }
+            sessions: {}
+            reservation_priority: {}
+            qr_code: { type: string, nullable: true }
+            following:
+              type: boolean
+              nullable: true
+              description: Present (bool) only in search-result contexts.
+    Business:
+      type: object
+      properties:
+        id: { type: integer }
+        place_id: { type: string, nullable: true }
+        name: { type: string }
+        status: { type: string }
+        city: { type: string, nullable: true }
+        borough: { type: string, nullable: true }
+        lat: { type: number }
+        lng: { type: number }
+        price: { type: integer, nullable: true }
+        price_key: { type: string, nullable: true }
+        neighborhood: { type: string, nullable: true }
+        country: { type: string, nullable: true }
+        website: { type: string, nullable: true }
+        phone_number: { type: string, nullable: true }
+        cuisines: { type: array, items: { type: string } }
+        default_category: { type: string, nullable: true }
+        quick_link: { type: string, nullable: true }
+        tz: { type: string, nullable: true }
+        has_cover_photo: { type: boolean }
+      required: [id, name]
+    BusinessHours:
+      type: object
+      properties:
+        open_day: { type: integer }
+        close_day: { type: integer }
+        open_time: { type: string }
+        close_time: { type: string }
+    Score:
+      type: object
+      properties:
+        user_id: { type: string, format: uuid }
+        business_id: { type: integer }
+        value: { type: number }
+        category: { type: string }
+        num_visits: { type: integer, nullable: true }
+        notification_id: { type: integer, nullable: true }
+        sent_dt: { type: string, format: date-time, nullable: true }
+    CachedScore:
+      type: object
+      properties:
+        user_id: { type: string, format: uuid }
+        business_id: { type: integer }
+        value: { type: number }
+        category: { type: string }
+        labels: { type: array, items: { type: string } }
+    Photo:
+      type: object
+      properties:
+        id: { type: integer }
+        image: { type: string }
+        thumbnail: { type: string, nullable: true }
+        bb_image: { type: string, nullable: true }
+        bb_thumbnail: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        order: { type: integer }
+        favorite_dish: { type: string, nullable: true }
+        created_dt: { type: string, format: date-time }
+        status: { type: string }
+        likes: { type: array, items: { type: string, format: uuid } }
+        user: {}
+        business: {}
+      required: [id]
+    PublishedList:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        cover_photo: {}
+        ranked: { type: boolean }
+        category: { type: string, nullable: true }
+        quick_link: { type: string, nullable: true }
+        challenge_info:
+          type: object
+          nullable: true
+          properties:
+            is_joined: { type: boolean }
+            progress: { type: number }
+            total: { type: number }
+            participant_count: { type: integer }
+        status: { type: string }
+      required: [id, title]
+    FeedItem:
+      type: object
+      properties:
+        id: { type: integer }
+        event_type: { type: string, description: "e.g. ADD, BOOKMARK, … (not exhaustively observed)" }
+        sent_dt: { type: string, format: date-time }
+        user1: {}
+        title: { type: string, nullable: true }
+        body: { type: string, nullable: true }
+        business: {}
+        category: { type: string, nullable: true }
+        score: { type: number, nullable: true }
+        num_visits: { type: integer, nullable: true }
+        business_full: {}
+      required: [id]
+    FollowEdge:
+      type: object
+      properties:
+        id: { type: integer }
+        request_dt: { type: string, format: date-time, nullable: true }
+        accept_dt: { type: string, format: date-time, nullable: true }
+        unfollow_dt: { type: string, format: date-time, nullable: true }
+        unaccept_dt: { type: string, format: date-time, nullable: true }
+        status: { type: string, enum: [ACTIVE, INACTIVE] }
+        follower: { type: string, format: uuid }
+        followed: { type: string, format: uuid }
+      required: [id, status]
+    ReservationOffer:
+      type: object
+      description: >
+        Slot metadata and availability keys vary by query/platform; treat
+        as a partial contract beyond the fields listed here.
+      properties:
+        id: {}
+        user: {}
+        business: {}
+        reservation_platforms:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              name: { type: string, enum: [OPENTABLE, SEVENROOMS] }
+    Field:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        display: { type: string, nullable: true }
+        table: { type: string, nullable: true }
+        category: { type: string, nullable: true }
+        is_filter: { type: boolean }
+      required: [id, name]
+    UserSetting:
+      type: object
+      properties:
+        user: {}
+        field: { $ref: "#/components/schemas/Field" }
+        value: {}
+        start_dt: { type: string, format: date-time, nullable: true }
+        end_dt: { type: string, format: date-time, nullable: true }
+    TokenPair:
+      type: object
+      properties: { access: { type: string }, refresh: { type: string } }
+      required: [access, refresh]
+    AccessToken:
+      type: object
+      properties: { access: { type: string } }
+      required: [access]
+    LoginRequest:
+      type: object
+      properties:
+        email: { type: string }
+        phone_no: { type: string }
+        password: { type: string }
+      required: [password]
+    RefreshRequest:
+      type: object
+      properties: { refresh: { type: string } }
+      required: [refresh]
+    ErrorDetail:
+      type: object
+      properties: { detail: { type: string }, code: { type: string } }
+    ResultsEnvelope:
+      type: object
+      properties: { results: { type: array, items: {} } }
+    PaginatedResults:
+      type: object
+      properties:
+        count: { type: integer }
+        next: { type: string, nullable: true }
+        previous: { type: string, nullable: true }
+        results: { type: array, items: {} }
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
   parameters:
