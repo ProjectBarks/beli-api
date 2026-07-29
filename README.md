@@ -78,9 +78,43 @@ Also handled: operations are routed to the right one of the four hosts, requests
 | Token | Lifetime | Notes |
 |---|---|---|
 | access | 20 minutes | sent as `Authorization: Bearer <token>` |
-| refresh | 7 days | not rotated on use |
+| refresh | 7 days | not rotated, so the same one works all week |
 
-Pass `accessToken` (TS/Go) or `access_token` (Python) instead of a password to reuse a token from a previous session and skip the login round trip.
+Access tokens are renewed for you before any request that would otherwise go out with an expired one, using the refresh token if it is still good and falling back to the password if it is not.
+
+### Resuming without a password
+
+Store the refresh token and reuse it for up to 7 days. No password, no login round trip.
+
+```ts
+const beli = await createBeliClient({ email, password });
+save(beli.tokens.refresh);
+
+// later
+const beli = await createBeliClient({ refreshToken: load() });
+```
+
+```python
+session = BeliSession(email=email, password=password)
+beli = session.client()
+save(session.tokens.refresh)
+
+# later
+session = BeliSession(refresh_token=load())
+beli = session.client()
+```
+
+```go
+s, _ := beliapi.NewSession(beliapi.Options{Email: email, Password: password})
+beli, _ := s.Client(beliapi.HostAPI)
+save(s.Tokens().Refresh)
+
+// later
+s, _ := beliapi.NewSession(beliapi.Options{RefreshToken: load()})
+beli, _ := s.Client(beliapi.HostAPI)
+```
+
+Once both tokens are dead and no password is available, the client raises rather than failing silently on the next call.
 
 Expect `/api/followers/` and `/api/average-score/` to return 503 intermittently, and note that rapid repeated logins are throttled.
 

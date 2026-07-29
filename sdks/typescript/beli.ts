@@ -61,9 +61,18 @@ export type Tokens = { access: string; refresh: string };
 const decodeExp = (jwt: string): number =>
   JSON.parse(Buffer.from(jwt.split(".")[1], "base64url").toString()).exp;
 
-/** True once the token is within `skewMs` of expiring. */
-export const isExpired = (jwt: string, skewMs = 60_000): boolean =>
-  decodeExp(jwt) * 1000 - skewMs <= Date.now();
+/**
+ * True once the token is within `skewMs` of expiring. Missing or unparseable
+ * tokens count as expired so callers can treat this as "needs renewing".
+ */
+export const isExpired = (jwt: string | undefined, skewMs = 60_000): boolean => {
+  if (!jwt) return true;
+  try {
+    return decodeExp(jwt) * 1000 - skewMs <= Date.now();
+  } catch {
+    return true;
+  }
+};
 
 type AnyFn = (options?: any) => any;
 type Bound<T> = T extends (options: infer O) => infer R
@@ -118,34 +127,40 @@ export async function createBeliClient(options: BeliOptions = {}): Promise<BeliC
     });
   };
 
-  if (!tokens.access && options.email && options.password) {
-    const { data, error } = await call("login", {
-      body: { email: options.email, password: options.password },
-    });
-    if (error || !data) throw new Error(`beli: login failed (${JSON.stringify(error)})`);
-    tokens = data as Tokens;
-  }
-  if (!tokens.access) {
-    throw new Error("beli: pass either email and password, or an accessToken");
-  }
-
-  /** Access tokens last 20 minutes; refresh tokens last 7 days and are not rotated. */
-  const ensureFreshToken = async () => {
+  /**
+   * Make sure `tokens.access` is usable, renewing it in the cheapest way
+   * available. Access tokens last 20 minutes; refresh tokens last 7 days and
+   * are not rotated, so the same refresh token keeps working all week. Called
+   * once at startup (which is what lets you resume from a stored refresh token
+   * alone) and again before every request.
+   */
+  const ensureFreshToken = async (): Promise<void> => {
     if (!isExpired(tokens.access)) return;
-    if (tokens.refresh && !isExpired(tokens.refresh)) {
+
+    if (!isExpired(tokens.refresh)) {
       const { data } = await call("refreshToken", { body: { refresh: tokens.refresh } });
       if (data?.access) {
         tokens.access = data.access;
         return;
       }
     }
+
     if (options.email && options.password) {
-      const { data } = await call("login", {
+      const { data, error } = await call("login", {
         body: { email: options.email, password: options.password },
       });
-      if (data) tokens = data as Tokens;
+      if (error || !data) throw new Error(`beli: login failed (${JSON.stringify(error)})`);
+      tokens = data as Tokens;
+      return;
     }
+
+    throw new Error(
+      "beli: no usable token. Pass email and password, a live accessToken, " +
+        "or a refreshToken issued in the last 7 days.",
+    );
   };
+
+  await ensureFreshToken();
 
   let queue: Promise<unknown> = Promise.resolve();
   const throttled = (name: string) =>

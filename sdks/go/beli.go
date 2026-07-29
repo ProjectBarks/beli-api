@@ -5,9 +5,14 @@ package beliapi
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strings"
+	"sync"
+	"time"
 )
 
 const (
@@ -32,16 +37,156 @@ var UserAgents = []string{
 	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15",
 }
 
-// Options configures Connect. Supply Email and Password, or an AccessToken from
-// an earlier session.
+// Options configures Connect. Supply Email and Password, or a RefreshToken or
+// AccessToken from an earlier session.
 type Options struct {
 	Email       string
 	Password    string
 	AccessToken string
+	// RefreshToken resumes a session without logging in again. Refresh tokens
+	// last 7 days and are not rotated, so the same one keeps working all week.
+	RefreshToken string
 	// UserAgent defaults to a random entry from UserAgents.
 	UserAgent string
 	// Origin defaults to DefaultOrigin.
 	Origin string
+}
+
+// Tokens is the current token pair. Read it off a Session to store the refresh
+// token between runs.
+type Tokens struct {
+	Access  string
+	Refresh string
+}
+
+// Session renews the access token as needed. Connect builds one internally;
+// use NewSession when you also want the tokens back.
+type Session struct {
+	opts   Options
+	tokens Tokens
+	auth   *ClientWithResponses
+	mu     sync.Mutex
+}
+
+func claims(token string) (map[string]any, error) {
+	parts := strings.Split(token, ".")
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("malformed token")
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, err
+	}
+	var out map[string]any
+	return out, json.Unmarshal(raw, &out)
+}
+
+// IsExpired reports whether the token is within a minute of expiring. Missing
+// or unparseable tokens count as expired.
+func IsExpired(token string) bool {
+	c, err := claims(token)
+	if err != nil {
+		return true
+	}
+	exp, ok := c["exp"].(float64)
+	if !ok {
+		return true
+	}
+	return time.Now().Add(time.Minute).After(time.Unix(int64(exp), 0))
+}
+
+// NewSession prepares a session without performing any network call yet.
+func NewSession(o Options) (*Session, error) {
+	if o.UserAgent == "" {
+		o.UserAgent = UserAgents[rand.Intn(len(UserAgents))]
+	}
+	if o.Origin == "" {
+		o.Origin = DefaultOrigin
+	}
+	auth, err := NewClientWithResponses(HostOnboard,
+		header("User-Agent", o.UserAgent), header("Origin", o.Origin))
+	if err != nil {
+		return nil, err
+	}
+	return &Session{
+		opts:   o,
+		tokens: Tokens{Access: o.AccessToken, Refresh: o.RefreshToken},
+		auth:   auth,
+	}, nil
+}
+
+// Tokens returns the current pair. Store Refresh to resume later.
+func (s *Session) Tokens() Tokens {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.tokens
+}
+
+// UserID reads the logged-in user's UUID out of the access token.
+func (s *Session) UserID(ctx context.Context) (string, error) {
+	token, err := s.EnsureFresh(ctx)
+	if err != nil {
+		return "", err
+	}
+	c, err := claims(token)
+	if err != nil {
+		return "", err
+	}
+	id, _ := c["user_id"].(string)
+	return id, nil
+}
+
+// EnsureFresh renews the access token if needed and returns it. Access tokens
+// last 20 minutes; refresh tokens last 7 days and are not rotated.
+func (s *Session) EnsureFresh(ctx context.Context) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !IsExpired(s.tokens.Access) {
+		return s.tokens.Access, nil
+	}
+
+	if !IsExpired(s.tokens.Refresh) {
+		res, err := s.auth.RefreshTokenWithResponse(ctx,
+			&RefreshTokenParams{Origin: OriginHeader(s.opts.Origin)},
+			RefreshTokenJSONRequestBody{Refresh: s.tokens.Refresh})
+		if err == nil && res.JSON200 != nil && res.JSON200.Access != "" {
+			s.tokens.Access = res.JSON200.Access
+			return s.tokens.Access, nil
+		}
+	}
+
+	if s.opts.Email != "" && s.opts.Password != "" {
+		res, err := s.auth.LoginWithResponse(ctx,
+			&LoginParams{Origin: OriginHeader(s.opts.Origin)},
+			LoginJSONRequestBody{Email: &s.opts.Email, Password: s.opts.Password})
+		if err != nil {
+			return "", err
+		}
+		if res.JSON200 == nil {
+			return "", fmt.Errorf("beli: login failed with status %s", res.HTTPResponse.Status)
+		}
+		s.tokens = Tokens{Access: res.JSON200.Access, Refresh: res.JSON200.Refresh}
+		return s.tokens.Access, nil
+	}
+
+	return "", fmt.Errorf("beli: no usable token. Pass Email and Password, a live " +
+		"AccessToken, or a RefreshToken issued in the last 7 days")
+}
+
+// Client returns a client for host that renews the token before each request.
+func (s *Session) Client(host string) (*ClientWithResponses, error) {
+	return NewClientWithResponses(host,
+		header("User-Agent", s.opts.UserAgent),
+		header("Origin", s.opts.Origin),
+		WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
+			token, err := s.EnsureFresh(ctx)
+			if err != nil {
+				return err
+			}
+			req.Header.Set("Authorization", "Bearer "+token)
+			return nil
+		}))
 }
 
 func header(key, value string) ClientOption {
@@ -60,38 +205,12 @@ func header(key, value string) ClientOption {
 // Note that params still carry an Origin field because it is declared in the
 // spec; leave it empty and this layer fills it in.
 func Connect(ctx context.Context, o Options) (*ClientWithResponses, error) {
-	ua := o.UserAgent
-	if ua == "" {
-		ua = UserAgents[rand.Intn(len(UserAgents))]
+	session, err := NewSession(o)
+	if err != nil {
+		return nil, err
 	}
-	origin := o.Origin
-	if origin == "" {
-		origin = DefaultOrigin
+	if _, err := session.EnsureFresh(ctx); err != nil {
+		return nil, err
 	}
-
-	token := o.AccessToken
-	if token == "" {
-		if o.Email == "" || o.Password == "" {
-			return nil, fmt.Errorf("beli: pass either Email and Password, or an AccessToken")
-		}
-		auth, err := NewClientWithResponses(HostOnboard, header("User-Agent", ua), header("Origin", origin))
-		if err != nil {
-			return nil, err
-		}
-		res, err := auth.LoginWithResponse(ctx,
-			&LoginParams{Origin: OriginHeader(origin)},
-			LoginJSONRequestBody{Email: &o.Email, Password: o.Password})
-		if err != nil {
-			return nil, err
-		}
-		if res.JSON200 == nil {
-			return nil, fmt.Errorf("beli: login failed with status %s", res.HTTPResponse.Status)
-		}
-		token = res.JSON200.Access
-	}
-
-	return NewClientWithResponses(HostAPI,
-		header("User-Agent", ua),
-		header("Origin", origin),
-		header("Authorization", "Bearer "+token))
+	return session.Client(HostAPI)
 }
