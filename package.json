@@ -1,0 +1,12 @@
+{
+  "name": "beli-api-tooling",
+  "private": true,
+  "scripts": {
+    "lint:spec": "spectral lint openapi/beli.yaml",
+    "bundle:spec": "redocly bundle openapi/beli.yaml -o openapi/beli.bundled.yaml"
+  },
+  "devDependencies": {
+    "@stoplight/spectral-cli": "^6",
+    "@redocly/cli": "^1"
+  }
+}

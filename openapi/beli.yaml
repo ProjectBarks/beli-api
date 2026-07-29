@@ -1,0 +1,40 @@
+openapi: 3.1.0
+info:
+  title: Beli API (Unofficial)
+  version: 0.1.0
+  description: >
+    Unofficial, community-maintained. Not affiliated with, endorsed by, or supported by Beli.
+    Reverse-engineered from observed traffic; may break without notice. Use your own account
+    credentials at your own risk.
+  license: { name: MIT }
+servers:
+  - { url: "https://backoffice-service-t57o3dxfca-nn.a.run.app", description: API }
+  - { url: "https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app", description: ONBOARD }
+  - { url: "https://backoffice-service-recs-t57o3dxfca-nn.a.run.app", description: RECS }
+  - { url: "https://activity-service-978733420956.northamerica-northeast1.run.app", description: ACTIVITY }
+tags:
+  - { name: auth }
+  - { name: profile }
+  - { name: search }
+  - { name: business }
+  - { name: social }
+  - { name: ranking }
+  - { name: feed }
+  - { name: lists }
+  - { name: notifications }
+  - { name: reservations }
+  - { name: payments }
+  - { name: telemetry }
+paths: {}
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    OriginHeader:
+      name: Origin
+      in: header
+      required: true
+      schema: { type: string, default: "https://localhost" }
+      description: Required by the backend; requests without an Origin header receive 403.
+security:
+  - bearerAuth: []
