@@ -1,0 +1,28 @@
+name: sdk-gen
+on:
+  push: { branches: [main], paths: ["openapi/beli.yaml", "sdkgen/**", "Makefile"] }
+  workflow_dispatch: {}
+permissions: { contents: write, pull-requests: write }
+jobs:
+  generate:
+    if: github.repository == 'ProjectBarks/beli-api'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-go@v5
+        with: { go-version: "1.22" }
+      - name: Install openapi-python-client
+        run: pipx install openapi-python-client
+      - name: Regenerate all SDKs
+        run: make sdks
+      - name: Open PR if SDKs changed
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore(sdk): regenerate SDKs from spec"
+          branch: sdk-regen
+          title: "chore(sdk): regenerate SDKs from spec"
+          body: "Automated regeneration after an `openapi/beli.yaml` change."
