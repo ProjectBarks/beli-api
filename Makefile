@@ -1,9 +1,10 @@
 .PHONY: sdks sdk-ts sdk-py sdk-go
 sdks: sdk-ts sdk-py sdk-go
 sdk-ts:
-	# Pin typescript@5.9 and @hey-api version: registry-latest typescript@7 crashes
-	# @hey-api/openapi-ts ("Cannot read properties of undefined (reading 'LineFeed')").
-	npx -y -p typescript@5.9.3 -p @hey-api/openapi-ts@0.99.0 openapi-ts -f sdkgen/openapi-ts.config.ts
+	# Uses the LOCAL bin so typescript is pinned to root devDeps (^5.9.3); registry-latest
+	# typescript@7 crashes @hey-api ("Cannot read ... 'LineFeed'"). Run `npm install` at repo
+	# root first (CI does this; locally too).
+	npx openapi-ts -f sdkgen/openapi-ts.config.ts
 sdk-py:
 	uvx openapi-python-client generate --path openapi/beli.yaml --config sdkgen/python-client.yaml --output-path sdks/python --overwrite
 sdk-go:

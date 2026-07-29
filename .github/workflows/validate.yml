@@ -12,6 +12,9 @@ jobs:
         with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
+      # Root deps (yaml) are needed by scripts/affected-endpoints.mjs, run from repo root.
+      - name: Install root tooling deps
+        run: npm install
       # The TS SDK is consumed as source (vitest/tsx transpiles it) via the
       # validation package's `file:../sdks/typescript` dep — no build/ci step needed.
       - name: Install validation deps
