@@ -143,7 +143,18 @@ Editing `openapi/beli.yaml` is the only way to change the generated code. The ge
 
 The convenience layers are hand-written and safe to edit: `sdks/typescript/beli.ts`, `sdks/go/beli.go`, and `sdkgen/python/beli.py` (copied into the Python package after each generation, since that generator rewrites its whole output directory).
 
-Tests run offline by default. Set `BELI_EMAIL`, `BELI_PASSWORD`, `BELI_TEST_TARGET_USER`, and `BELI_TEST_TARGET_BUSINESS` to also run the live tests against the real API. Writes are tested in reversible pairs (follow then unfollow, bookmark then remove, rank then delete), each cleaned up in a `finally` block. CI logs in once per run and only tests operations whose spec entries changed in the diff.
+Tests run offline by default. To also exercise the real API, supply your own credentials locally:
+
+```bash
+cd validation
+BELI_EMAIL=... BELI_PASSWORD=... \
+BELI_TEST_TARGET_USER=<uuid> BELI_TEST_TARGET_BUSINESS=<id> \
+AFFECTED_OPS=ALL npx vitest run
+```
+
+Writes are tested in reversible pairs (follow then unfollow, bookmark then remove, rank then delete), each cleaned up in a `finally` block, so the account ends where it started. `scripts/affected-endpoints.mjs` narrows a run to just the operations a diff touched.
+
+**CI never logs in.** No credentials are stored in this repository, and the live suites skip themselves when `BELI_EMAIL` is unset. GitHub only runs the spec validation, typecheck, and offline tests, on push and pull request. Nothing runs on a schedule.
 
 ## License
 
